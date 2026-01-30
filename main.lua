@@ -1,4 +1,5 @@
 local GameStateManager = require("gamestate")
+local Transitions = require("transitions")
 local MenuState = require("states.menu")
 local CreditsState = require("states.credits")
 local OptionsState = require("states.options")
@@ -53,10 +54,12 @@ end
 
 function love.update(dt)
     GameStateManager:update(dt)
+    Transitions:update(dt)
 end
 
 function love.draw()
     GameStateManager:draw()
+    Transitions:draw()
 end
 
 function love.keypressed(key)
@@ -86,4 +89,12 @@ end
 function love.resize(w, h)
     updateGameScale()
     GameStateManager:onResize()
+end
+
+-- Fonction utilitaire pour changer d'état avec transition
+function transitionToState(stateName, transitionType, duration)
+    Transitions:start(transitionType or "fade", duration or 0.5)
+    -- Changer d'état après la moitié de la transition
+    love.timer.sleep(0)
+    GameStateManager:setState(stateName)
 end
