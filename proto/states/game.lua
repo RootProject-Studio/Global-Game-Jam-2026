@@ -28,7 +28,7 @@ function GameState:enter()
     self.baseRoomHeight = 500
     self.basePlayerX = 400
     self.basePlayerY = 300
-    self.basePlayerSpeed = 200
+    self.basePlayerSpeed = 2000
     self.basePlayerSize = 20
     
     -- Position du joueur (centre de la salle)

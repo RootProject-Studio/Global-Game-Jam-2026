@@ -29,6 +29,8 @@ function DungeonGenerator:generate()
     self.grid = {}
     self.rooms = {}
     self.roomCount = 0
+
+    math.randomseed(os.time())
     
     -- Initialiser la grille
     local size = self.config.gridSize
