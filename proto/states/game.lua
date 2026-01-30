@@ -9,6 +9,7 @@ function GameState:enter()
     -- Générer un nouveau donjon
     self.generator = DungeonGenerator:new()
     self.dungeon = self.generator:generate()
+    self.generator:populateRooms()
     
     -- Trouver la salle de départ
     self.currentRoom = nil
@@ -28,7 +29,7 @@ function GameState:enter()
     self.baseRoomHeight = 500
     self.basePlayerX = 400
     self.basePlayerY = 300
-    self.basePlayerSpeed = 2000
+    self.basePlayerSpeed = 800
     self.basePlayerSize = 20
     
     -- Position du joueur (centre de la salle)
@@ -176,6 +177,28 @@ function GameState:draw()
     if self.debugMode then
         self:drawDebugInfo()
     end
+
+    -- Dessiner les mobs
+    if self.currentRoom.mobs then
+        for _, mob in ipairs(self.currentRoom.mobs) do
+            if mob.type == "boss" then
+                love.graphics.setColor(1, 0, 0)
+            else
+                love.graphics.setColor(0.8, 0.3, 0.3)
+            end
+
+            local mobX = self.roomX + mob.relX * self.roomWidth
+            local mobY = self.roomY + mob.relY * self.roomHeight
+
+            love.graphics.circle("fill", mobX, mobY, 15 * _G.gameConfig.scaleX)
+        end
+    end
+
+
+
+
+
+
     
     -- Instructions en bas
     love.graphics.setColor(1, 1, 1)

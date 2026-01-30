@@ -1,6 +1,11 @@
 -- dungeon/generator.lua
 -- Générateur de labyrinthe style The Binding of Isaac
 
+
+local Mob = require("dungeon.mob")
+
+
+
 local DungeonGenerator = {}
 
 -- Types de salles
@@ -364,4 +369,30 @@ function DungeonGenerator:canPlaceRoomForced(x, y)
     return adjacentCount == 1
 end
 
+
+function DungeonGenerator:populateRooms()
+    for _, room in ipairs(self.rooms) do
+        room.mobs = {}
+        
+        if room.type == self.ROOM_TYPES.BOSS then
+            local boss = Mob:new(Mob.TYPES.BOSS)
+            -- Position relative à la salle (0 à 1)
+            boss.relX = 0.5
+            boss.relY = 0.5
+            table.insert(room.mobs, boss)
+        elseif room.type == self.ROOM_TYPES.NORMAL then
+            local mobCount = math.random(1, 3)
+            for i = 1, mobCount do
+                local mob = Mob:new(Mob.TYPES.NORMAL)
+                mob.relX = 0.2 + math.random() * 0.6
+                mob.relY = 0.2 + math.random() * 0.6
+                table.insert(room.mobs, mob)
+            end
+        end
+    end
+end
+
+
+
 return DungeonGenerator
+
