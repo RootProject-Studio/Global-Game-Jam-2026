@@ -379,6 +379,7 @@ function DungeonGenerator:populateRooms()
             -- Position relative à la salle (0 à 1)
             boss.relX = 0.5
             boss.relY = 0.5
+            boss.speed = 0  -- le boss reste statique pour l'instant
             table.insert(room.mobs, boss)
         elseif room.type == self.ROOM_TYPES.NORMAL then
             local mobCount = math.random(1, 3)
@@ -386,6 +387,11 @@ function DungeonGenerator:populateRooms()
                 local mob = Mob:new(Mob.TYPES.NORMAL)
                 mob.relX = 0.2 + math.random() * 0.6
                 mob.relY = 0.2 + math.random() * 0.6
+                mob.speed = 50 + math.random() * 100  -- pixels par seconde
+                -- direction aléatoire (dx, dy normalisé)
+                local angle = math.random() * 2 * math.pi
+                mob.dx = math.cos(angle)
+                mob.dy = math.sin(angle)
                 table.insert(room.mobs, mob)
             end
         end
