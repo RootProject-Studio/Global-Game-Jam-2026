@@ -15,13 +15,17 @@ il peut aller voir la tortue pape pour changer des emotions en masque (un pouvoi
 - le castor insoumis
 - le renard narcissique
 - un levrier afghan qui possède des thunes (qui se déplace sur un rumba)
-- un canard orange avec le masque (donald trump avec la casquette MAGA et un pensement sur l'oreille)*
+- un canard orange avec le masque (donald trump avec la casquette MAGA et un pensement sur l'oreille)
+- scarface 
+- daf punk chikmaunks
+- dark vador vers de terre
+- the mask en kangourou
 
 ### le guide :
 - le corbeau divin (odin)
 
 ### le vendeur de masque :
-- l'opossum dans une poubelle
+- l'opossum dans une poubelle (plot twix cest le mechant)
 
 ## Les masques :
 
