@@ -164,6 +164,19 @@ function GameState:draw()
     love.graphics.setColor(0.2, 0.2, 0.25)
     love.graphics.rectangle("fill", self.roomX, self.roomY, self.roomWidth, self.roomHeight)
     
+
+        -- Dessiner les mobs de la salle
+    if self.currentRoom.mobs then
+        for _, mob in ipairs(self.currentRoom.mobs) do
+            mob:draw({
+                roomX = self.roomX,
+                roomY = self.roomY,
+                roomWidth = self.roomWidth,
+                roomHeight = self.roomHeight
+            })
+        end
+    end
+    
     -- Dessiner les portes
     self:drawDoors()
     
@@ -181,25 +194,8 @@ function GameState:draw()
         self:drawDebugInfo()
     end
 
-    -- Dessiner les mobs de la salle
-    if self.currentRoom.mobs then
-        for _, mob in ipairs(self.currentRoom.mobs) do
-            mob:draw({
-                roomX = self.roomX,
-                roomY = self.roomY,
-                roomWidth = self.roomWidth,
-                roomHeight = self.roomHeight
-            })
-        end
-    end
 
 
-
-
-
-
-
-    
     -- Instructions en bas
     love.graphics.setColor(1, 1, 1)
     local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
@@ -406,28 +402,14 @@ function GameState:updateMobs(dt)
     if not self.currentRoom.mobs then return end
 
     for _, mob in ipairs(self.currentRoom.mobs) do
-        local speed = 50 * _G.gameConfig.scaleX -- vitesse de base des mobs
-
-        if mob.type == "normal" then
-            -- Les mobs normaux suivent un mouvement simple : oscillation horizontale ou verticale
-            if not mob.dirX then mob.dirX = 1 end
-            if not mob.dirY then mob.dirY = 1 end
-
-            mob.relX = mob.relX + mob.dirX * speed * dt / self.roomWidth
-            mob.relY = mob.relY + mob.dirY * speed * dt / self.roomHeight
-
-            -- Inverser la direction si on touche les bords de la salle
-            if mob.relX < 0 then mob.relX = 0; mob.dirX = 1 end
-            if mob.relX > 1 then mob.relX = 1; mob.dirX = -1 end
-            if mob.relY < 0 then mob.relY = 0; mob.dirY = 1 end
-            if mob.relY > 1 then mob.relY = 1; mob.dirY = -1 end
-
-        elseif mob.type == "boss" then
-            -- Boss peut rester statique ou avoir un mouvement particulier
-            -- Pour l'instant, on le laisse statique
-        end
+        mob:update(dt, {
+            roomWidth  = self.roomWidth,
+            roomHeight = self.roomHeight,
+            scale      = _G.gameConfig.scaleX -- si besoin pour le draw
+        })
     end
 end
+
 
 
 return GameState
