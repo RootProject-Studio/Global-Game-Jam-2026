@@ -3,11 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "",
+    "activeFile": "city01S.tmx",
     "expandedProjectPaths": [
     ],
     "file.lastUsedOpenFilter": "Tous les Fichiers (*)",
     "fileStates": {
+        ":/automap-tiles.tsx": {
+            "scaleInDock": 1
+        },
         "Lo_bit_city_set.tsx": {
             "scaleInDock": 0.75,
             "scaleInEditor": 1
@@ -33,6 +36,17 @@
         },
         "city01L.tmx#Lo_bit_city_set": {
             "scaleInDock": 3
+        },
+        "city01LN.tmx": {
+            "scale": 3,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 179.5,
+                "y": 161.16666666666669
+            }
+        },
+        "city01LN.tmx#Lo_bit_city_set": {
+            "scaleInDock": 1
         },
         "city01LNS.tmx": {
             "scale": 2,
@@ -78,6 +92,17 @@
         "city01LRS.tmx#Lo_bit_city_set": {
             "scaleInDock": 1
         },
+        "city01LS.tmx": {
+            "scale": 2.529375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 159.92092908327155,
+                "y": 159.92092908327155
+            }
+        },
+        "city01LS.tmx#Lo_bit_city_set": {
+            "scaleInDock": 1
+        },
         "city01N.tmx": {
             "scale": 2,
             "selectedLayer": 0,
@@ -111,27 +136,49 @@
         "city01R.tmx#Lo_bit_city_set": {
             "scaleInDock": 5.5
         },
-        "city01RNS.tmx": {
-            "scale": 23,
+        "city01RN.tmx": {
+            "scale": 2,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 200.80434782608694,
-                "y": 197.15217391304347
+                "x": 66.25,
+                "y": 142.25
+            }
+        },
+        "city01RN.tmx#Lo_bit_city_set": {
+            "scaleInDock": 2
+        },
+        "city01RNS.tmx": {
+            "scale": 2,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 171.75,
+                "y": 175.75
             }
         },
         "city01RNS.tmx#Lo_bit_city_set": {
             "scaleInDock": 1
         },
+        "city01RS.tmx": {
+            "scale": 2,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 202.25,
+                "y": 178.75
+            }
+        },
+        "city01RS.tmx#Lo_bit_city_set": {
+            "scaleInDock": 1.5
+        },
         "city01S.tmx": {
-            "scale": 2.529375,
+            "scale": 2,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 159.92092908327155,
-                "y": 159.92092908327155
+                "x": 163.25,
+                "y": 181.25
             }
         },
         "city01S.tmx#Lo_bit_city_set": {
-            "scaleInDock": 1
+            "scaleInDock": 2
         },
         "sewer01.tmx": {
             "scale": 1,
@@ -213,19 +260,32 @@
     "map.tileWidth": 16,
     "map.width": 20,
     "openFiles": [
+        "city01NS.tmx",
+        "city01LR.tmx",
+        "city01LNS.tmx",
+        "city01RNS.tmx",
+        "city01LRN.tmx",
+        "city01LRS.tmx",
+        "city01ALL.tmx",
+        "city01L.tmx",
+        "city01R.tmx",
+        "city01N.tmx",
+        "city01S.tmx"
     ],
     "project": "maps.tiled-project",
     "recentFiles": [
-        "sewer01LRN.tmx",
-        "sewer01LRS.tmx",
-        "sewer01LN.tmx",
-        "sewer01LR.tmx",
-        "sewer01NS.tmx",
-        "sewer01LS.tmx",
-        "Lo_bit_city_set.tsx",
+        "city01NS.tmx",
         "city01LR.tmx",
-        "sewer01.tmx",
-        "sewer_tileset.tsx"
+        "city01LNS.tmx",
+        "city01RNS.tmx",
+        "city01LRN.tmx",
+        "city01LRS.tmx",
+        "city01ALL.tmx",
+        "city01L.tmx",
+        "city01R.tmx",
+        "city01N.tmx",
+        "city01S.tmx",
+        "sewer01LRN.tmx"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": true,
