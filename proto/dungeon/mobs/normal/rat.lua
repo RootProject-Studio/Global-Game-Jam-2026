@@ -14,39 +14,42 @@ function Rat:new(data)
 end
 
 function Rat:update(dt, ctx)
-    -- Calcul du mouvement relatif
-    local dx = math.cos(self.dir) * self.speed * dt / ctx.roomWidth
-    local dy = math.sin(self.dir) * self.speed * dt / ctx.roomHeight
-
-    self.relX = self.relX + dx
-    self.relY = self.relY + dy
-
-    -- Rebonds sur les murs
-    local bounced = false
-    if self.relX < 0 then
-        self.relX = 0
-        self.dir = math.pi - self.dir
-        bounced = true
-    elseif self.relX > 1 then
-        self.relX = 1
-        self.dir = math.pi - self.dir
-        bounced = true
+    -- Se diriger en ligne droite vers la position du joueur.
+    -- On travaille en pixels pour garder une vitesse cohérente,
+    -- puis on reconvertit en coordonnées relatives (0..1).
+    if not ctx.playerX or not ctx.playerY then
+        return
     end
 
-    if self.relY < 0 then
-        self.relY = 0
-        self.dir = -self.dir
-        bounced = true
-    elseif self.relY > 1 then
-        self.relY = 1
-        self.dir = -self.dir
-        bounced = true
+    -- position du mob en pixels depuis l'origine de la salle
+    local myX = self.relX * ctx.roomWidth
+    local myY = self.relY * ctx.roomHeight
+
+    -- position du joueur en pixels relative à l'origine de la salle
+    local targetX = ctx.playerX - ctx.roomX
+    local targetY = ctx.playerY - ctx.roomY
+
+    local dx = targetX - myX
+    local dy = targetY - myY
+    local dist = math.sqrt(dx*dx + dy*dy)
+
+    if dist > 0 then
+        local vx = dx / dist
+        local vy = dy / dist
+
+        local move_px = self.speed * dt
+        local moveX = vx * move_px
+        local moveY = vy * move_px
+
+        self.relX = self.relX + (moveX / ctx.roomWidth)
+        self.relY = self.relY + (moveY / ctx.roomHeight)
     end
 
-    -- Normaliser l'angle pour éviter les débordements
-    if bounced then
-        self.dir = (self.dir + 2 * math.pi) % (2 * math.pi)
-    end
+    -- Clamp pour rester dans la salle
+    if self.relX < 0 then self.relX = 0 end
+    if self.relX > 1 then self.relX = 1 end
+    if self.relY < 0 then self.relY = 0 end
+    if self.relY > 1 then self.relY = 1 end
 end
 
 function Rat:draw(ctx)

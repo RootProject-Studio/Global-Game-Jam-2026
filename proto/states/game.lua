@@ -401,12 +401,113 @@ end
 function GameState:updateMobs(dt)
     if not self.currentRoom.mobs then return end
 
+    local roomX = self.roomX
+    local roomY = self.roomY
+    local roomW = self.roomWidth
+    local roomH = self.roomHeight
+    local scale = _G.gameConfig.scaleX or 1
+
+    -- 1) Update each mob
     for _, mob in ipairs(self.currentRoom.mobs) do
         mob:update(dt, {
-            roomWidth  = self.roomWidth,
-            roomHeight = self.roomHeight,
-            scale      = _G.gameConfig.scaleX -- si besoin pour le draw
+            roomX = roomX,
+            roomY = roomY,
+            roomWidth = roomW,
+            roomHeight = roomH,
+            playerX = self.player.x,
+            playerY = self.player.y,
+            scale = scale
         })
+    end
+
+    -- 2) Build absolute positions and radii
+    local mobCount = #self.currentRoom.mobs
+    local abs = {}
+    for i, mob in ipairs(self.currentRoom.mobs) do
+        local mx = roomX + mob.relX * roomW
+        local my = roomY + mob.relY * roomH
+        local mr = (mob.size or 10) * scale
+        abs[i] = {mob = mob, x = mx, y = my, r = mr}
+    end
+
+    -- 3) Resolve mob↔mob collisions (simple push-apart)
+    for i = 1, mobCount do
+        for j = i+1, mobCount do
+            local a = abs[i]
+            local b = abs[j]
+            local dx = a.x - b.x
+            local dy = a.y - b.y
+            local dist2 = dx*dx + dy*dy
+            local minDist = a.r + b.r
+            if dist2 < (minDist * minDist) then
+                local dist = math.sqrt(dist2)
+                if dist == 0 then
+                    dx = 0.01; dy = 0.01; dist = math.sqrt(dx*dx + dy*dy)
+                end
+                local overlap = minDist - dist
+                -- Normalized direction from b to a
+                local nx = dx / dist
+                local ny = dy / dist
+                -- Push each by half the overlap
+                local pushAX = nx * (overlap * 0.5)
+                local pushAY = ny * (overlap * 0.5)
+                local pushBX = -nx * (overlap * 0.5)
+                local pushBY = -ny * (overlap * 0.5)
+
+                -- Apply to absolute positions
+                a.x = a.x + pushAX
+                a.y = a.y + pushAY
+                b.x = b.x + pushBX
+                b.y = b.y + pushBY
+            end
+        end
+    end
+
+    -- 4) Write back adjusted mob rel positions and clamp to room
+    for i, info in ipairs(abs) do
+        local m = info.mob
+        m.relX = math.max(0, math.min(1, (info.x - roomX) / roomW))
+        m.relY = math.max(0, math.min(1, (info.y - roomY) / roomH))
+    end
+
+    -- 5) Resolve mob↔player collisions (push player away and keep player inside room)
+    for _, info in ipairs(abs) do
+        local mx = info.x
+        local my = info.y
+        local mr = info.r
+        local px = self.player.x
+        local py = self.player.y
+        local pr = self.player.size or 8
+
+        local dx = px - mx
+        local dy = py - my
+        local dist2 = dx*dx + dy*dy
+        local minDist = pr + mr
+        if dist2 < (minDist * minDist) then
+            local dist = math.sqrt(dist2)
+            if dist == 0 then
+                dx = 0.01; dy = 0.01; dist = math.sqrt(dx*dx + dy*dy)
+            end
+            local overlap = minDist - dist
+            local nx = dx / dist
+            local ny = dy / dist
+
+            -- Push player away by the overlap (prefer moving player)
+            local pushPX = nx * overlap
+            local pushPY = ny * overlap
+            self.player.x = self.player.x + pushPX
+            self.player.y = self.player.y + pushPY
+
+            -- Clamp player inside room
+            local margin = self.player.size
+            self.player.x = math.max(roomX + margin, math.min(roomX + roomW - margin, self.player.x))
+            self.player.y = math.max(roomY + margin, math.min(roomY + roomH - margin, self.player.y))
+
+            -- Optionally, nudge mob slightly away as well to avoid sticking
+            local mob = info.mob
+            mob.relX = math.max(0, math.min(1, (mx - nx * (overlap * 0.25) - roomX) / roomW))
+            mob.relY = math.max(0, math.min(1, (my - ny * (overlap * 0.25) - roomY) / roomH))
+        end
     end
 end
 
