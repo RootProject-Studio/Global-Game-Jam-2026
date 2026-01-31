@@ -155,10 +155,16 @@ function GameState:draw()
                 roomX = self.roomX,
                 roomY = self.roomY,
                 roomWidth = self.roomWidth,
-                roomHeight = self.roomHeight
+                roomHeight = self.roomHeight,
+                playerX = self.player.x,
+                playerY = self.player.y,
+                player = self.player,
+                scale = _G.gameConfig.scaleX or 1,
+                debugMode = self.debugMode
             })
         end
     end
+
     
     -- Dessiner les portes
     self:drawDoors()
@@ -181,7 +187,7 @@ function GameState:draw()
     local fontSize = math.max(12, 12 * scale)
     love.graphics.setNewFont(fontSize)
     local padding = 20 * scale
-    love.graphics.print("D: debug | M: carte | R: regener | Echap: menu", padding, _G.gameConfig.windowHeight - padding - 10)
+    love.graphics.print("P: debug | M: carte | R: regener | Echap: menu", padding, _G.gameConfig.windowHeight - padding - 10)
 end
 
 function GameState:drawDebugInfo()
@@ -232,6 +238,15 @@ function GameState:drawDebugInfo()
     -- PV joueur
     love.graphics.print(
         "PV joueur: " .. (self.player.hp or 0) .. " / " .. (self.player.maxHp or 0),
+        startX,
+        startY + lineHeight * line
+    )
+    line = line + 1
+
+    -- Cooldown d'invincibilité
+    local hitCD = self.player.hitCooldown or 0
+    love.graphics.print(
+        string.format("Invincibilité: %.2fs", hitCD),
         startX,
         startY + lineHeight * line
     )
@@ -442,7 +457,8 @@ function GameState:updateMobs(dt)
             playerX = self.player.x,
             playerY = self.player.y,
             scale = scale,
-            player = self.player
+            player = self.player,
+            debugMode = self.debugMode
         })
     end
 
@@ -496,7 +512,7 @@ function GameState:updateMobs(dt)
         m.relY = math.max(0, math.min(1, (info.y - roomY) / roomH))
     end
 
-    -- 5) Resolve mob↔player collisions (push player away and keep player inside room)
+    -- 5) Resolve mob<->player collisions (push player away and keep player inside room)
     for _, info in ipairs(abs) do
         local mx = info.x
         local my = info.y

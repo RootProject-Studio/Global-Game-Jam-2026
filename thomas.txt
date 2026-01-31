@@ -4,11 +4,12 @@ TODO
 -faire systeme attaque perso
 -faire masque
 -faire deplacement mob + type mob
-    - ajouter vie
-    - ajouter degat
+
 -faire marchand
 
 
 DO
 
 -faire boss + pattern
+- ajouter vie
+- ajouter degat
