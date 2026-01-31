@@ -217,7 +217,7 @@ function Pigeon:draw(ctx)
         love.graphics.setColor(0.7, 0.4, 0.8)
     end
 
-    love.graphics.circle("fill", x, y, self.size * scale)
+    love.graphics.circle("fill", x, y, self.size)
 
     -- Barre de vie
     if self.maxHP > 1 then
