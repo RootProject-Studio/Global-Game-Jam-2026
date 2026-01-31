@@ -378,6 +378,10 @@ function TheMask:drawProjectiles(ctx)
         local px = ctx.roomX + p.relX * ctx.roomWidth
         local py = ctx.roomY + p.relY * ctx.roomHeight
         love.graphics.circle("fill", px, py, p.size * math.min(ctx.roomWidth, ctx.roomHeight))
+        if ctx and ctx.debugMode then
+            love.graphics.setColor(1, 0, 0, 0.6)
+            love.graphics.circle("line", px, py, p.size * math.min(ctx.roomWidth, ctx.roomHeight))
+        end
     end
 end
 
@@ -392,6 +396,10 @@ function TheMask:drawExplosions(ctx)
         local px = ctx.roomX + e.relX * ctx.roomWidth
         local py = ctx.roomY + e.relY * ctx.roomHeight
         love.graphics.circle("fill", px, py, radius)
+        if ctx and ctx.debugMode then
+            love.graphics.setColor(1, 0, 0, 0.6)
+            love.graphics.circle("line", px, py, radius)
+        end
     end
     love.graphics.setColor(1,1,1,1)
 end
@@ -402,6 +410,26 @@ function TheMask:draw(ctx)
     _old_draw(self, ctx)
     if self.projectiles then self:drawProjectiles(ctx) end
     if self.explosions then self:drawExplosions(ctx) end
+    -- Debug hitboxes
+    if ctx and ctx.debugMode then
+        -- Boss absolute position
+        local bx = (ctx.roomX or 0) + (self.relX or 0) * (ctx.roomWidth or 1)
+        local by = (ctx.roomY or 0) + (self.relY or 0) * (ctx.roomHeight or 1)
+
+        love.graphics.setColor(1, 0, 0, 0.3)
+        love.graphics.circle("line", bx, by, self.size)
+
+        -- Show player collision ellipse used by dash calculation
+        if ctx.player then
+            local player = ctx.player
+            local hitRadiusMultiplier = 1
+            local rx = (player.hitboxRadiusX or 10) + (self.size or 0) * hitRadiusMultiplier
+            local ry = (player.hitboxRadiusY or 10) + (self.size or 0) * hitRadiusMultiplier
+            love.graphics.setColor(1, 0, 0, 0.25)
+            love.graphics.ellipse("line", player.x, player.y, rx, ry)
+        end
+        love.graphics.setColor(1,1,1,1)
+    end
 end
 
 return TheMask
