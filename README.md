@@ -21,6 +21,12 @@ il peut aller voir la tortue pape pour changer des emotions en masque (un pouvoi
 - dark vador vers de terre
 - the mask en kangourou
 
+### les mob :
+- pigeon
+- rat
+- blaireau
+- tire a distance mais on sais pas
+
 ### le guide :
 - le corbeau divin (odin)
 
