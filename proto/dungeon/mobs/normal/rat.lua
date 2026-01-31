@@ -8,50 +8,61 @@ function Rat:new(data)
     data.speed = 60          -- pixels par seconde
     data.size = 14           -- rayon du Rat
     data.maxHP = data.maxHP or 3  -- PV max
+    data.damage = data.damage or 1  -- dégâts infligés au joueur
+
 
     local m = Mob.new(self, data)
+    m.attackCooldown = 0.5   -- temps entre deux attaques
+    m.attackTimer = 0         -- timer interne pour l'attaque
+
     m.dir = math.random() * 2 * math.pi  -- direction aléatoire
     return m
 end
 
 function Rat:update(dt, ctx)
-    -- Se diriger en ligne droite vers la position du joueur.
-    -- On travaille en pixels pour garder une vitesse cohérente,
-    -- puis on reconvertit en coordonnées relatives (0..1).
-    if not ctx.playerX or not ctx.playerY then
-        return
-    end
+    local player = ctx.player
+    if not player or not ctx.playerX or not ctx.playerY then return end
 
-    -- position du mob en pixels depuis l'origine de la salle
+    -- Position du Rat en pixels
     local myX = self.relX * ctx.roomWidth
     local myY = self.relY * ctx.roomHeight
 
-    -- position du joueur en pixels relative à l'origine de la salle
-    local targetX = ctx.playerX - ctx.roomX
-    local targetY = ctx.playerY - ctx.roomY
+    -- Position du joueur en pixels
+    local playerX = ctx.playerX - ctx.roomX
+    local playerY = ctx.playerY - ctx.roomY
 
-    local dx = targetX - myX
-    local dy = targetY - myY
+    local dx = playerX - myX
+    local dy = playerY - myY
     local dist = math.sqrt(dx*dx + dy*dy)
 
+    -- Déplacement du Rat vers le joueur
     if dist > 0 then
         local vx = dx / dist
         local vy = dy / dist
 
         local move_px = self.speed * dt
-        local moveX = vx * move_px
-        local moveY = vy * move_px
-
-        self.relX = self.relX + (moveX / ctx.roomWidth)
-        self.relY = self.relY + (moveY / ctx.roomHeight)
+        self.relX = self.relX + (vx * move_px / ctx.roomWidth)
+        self.relY = self.relY + (vy * move_px / ctx.roomHeight)
     end
 
     -- Clamp pour rester dans la salle
-    if self.relX < 0 then self.relX = 0 end
-    if self.relX > 1 then self.relX = 1 end
-    if self.relY < 0 then self.relY = 0 end
-    if self.relY > 1 then self.relY = 1 end
+    self.relX = math.max(0, math.min(1, self.relX))
+    self.relY = math.max(0, math.min(1, self.relY))
+
+    -- Timer pour attaques
+    self.attackTimer = (self.attackTimer or 0) + dt
+    local attackRange = self.size + (player.size or 8) + 10  -- zone autour du joueur
+
+    if dist <= attackRange then
+        if self.attackTimer >= (self.attackCooldown or 0.5) then
+            player.hp = math.max(0, player.hp - (self.damage or 1))
+            self.attackTimer = 0
+            
+        end
+    end
 end
+
+
 
 function Rat:draw(ctx)
     -- position absolue dans la salle
