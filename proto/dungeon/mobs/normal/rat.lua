@@ -5,7 +5,7 @@ Rat.__index = Rat
 function Rat:new(data)
     data.category = "normal"
     data.subtype = "rat"
-    data.speed = 30          -- pixels par seconde
+    data.speed = 60          -- pixels par seconde
     data.size = 14           -- rayon du Rat
 
     local m = Mob.new(self, data)
