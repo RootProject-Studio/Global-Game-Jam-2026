@@ -7,7 +7,6 @@ function Cyclope:new()
     obj.name = "Cyclope"
     obj.attackType = "distance"
     obj.damage = 50  -- Dégâts bonus apportés par Cyclope
-    obj.cooldown = 15
     obj.damageMultiplier = 1.5  -- Multiplicateur de dégâts (50% bonus)
     
     -- Propriétés du rayon laser
@@ -35,7 +34,6 @@ function Cyclope:draw(ctx)
 end
 
 function Cyclope:onEquip(player)
-    player.hitCooldown = self.cooldown
     -- Initialiser les propriétés de projectiles dans le joueur
     if not player.projectiles then
         player.projectiles = {}

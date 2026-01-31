@@ -51,15 +51,17 @@ function Rat:update(dt, ctx)
 
     -- Timer pour attaques
     self.attackTimer = (self.attackTimer or 0) + dt
-    local attackRange = self.size + (player.size or 8) + 10  -- zone autour du joueur
+    local hitboxMultiplier = 2  -- facteur pour agrandir la hitbox
+    local attackRange = (self.size + (player.size or 8)) * hitboxMultiplier
 
     if dist <= attackRange then
-        if self.attackTimer >= (self.attackCooldown or 0.5) then
+        if self.attackTimer >= (self.attackCooldown or 0.5) and (not player.hitCooldown or player.hitCooldown <= 0) then
             player.hp = math.max(0, player.hp - (self.damage or 1))
+            player.hitCooldown = 0.5 -- cooldown d’invincibilité du joueur
             self.attackTimer = 0
-            
         end
     end
+
 end
 
 
