@@ -5,10 +5,13 @@ local GameState = {}
 local GameStateManager = require("gamestate")
 local DungeonGenerator = require("dungeon.generator")
 local Pedro            = require("dungeon.mobs.player.pedro")
+local Cyclope          = require("dungeon.masks.cyclope")
 
 function GameState:enter()
 
     self.player = Pedro:new()
+    local cyclope = Cyclope:new()
+    self.player:equipMask(cyclope)
 
     -- Générer un nouveau donjon
     self.generator = DungeonGenerator:new()
@@ -33,7 +36,7 @@ function GameState:enter()
     self.baseRoomHeight = 500
     self.basePlayerX = 400
     self.basePlayerY = 300
-    self.basePlayerSpeed = 800
+    self.basePlayerSpeed = 400
     self.basePlayerSize = 20
     
     -- Mode de visualisation
@@ -79,7 +82,14 @@ end
 function GameState:update(dt)
     -- Update du joueur (Pedro gère son propre mouvement)
     if self.player then
-        self.player:update(dt)
+        -- Créer le contexte de la salle pour Pedro
+        local roomContext = {
+            roomX = self.roomX,
+            roomY = self.roomY,
+            roomWidth = self.roomWidth,
+            roomHeight = self.roomHeight
+        }
+        self.player:update(dt, roomContext)
     end
     
     -- Vérifier les transitions de salle via les portes
@@ -132,6 +142,10 @@ function GameState:update(dt)
     local margin = self.player.size
     self.player.x = math.max(self.roomX + margin, math.min(self.roomX + self.roomWidth - margin, self.player.x))
     self.player.y = math.max(self.roomY + margin, math.min(self.roomY + self.roomHeight - margin, self.player.y))
+    -- Vérifier les collisions des projectiles avec les ennemis (système générique)
+    if self.currentRoom and self.currentRoom.mobs then
+        self.player:checkProjectileCollisions(self.currentRoom.mobs)
+    end
 
     -- Update des mobs
     self:updateMobs(dt)
@@ -457,6 +471,7 @@ function GameState:updateMobs(dt)
             playerX = self.player.x,
             playerY = self.player.y,
             scale = scale,
+            doors = self.currentRoom.doors
             player = self.player,
             debugMode = self.debugMode
         })
