@@ -21,7 +21,7 @@
     "shootCooldown": 0.1,
     "rayDuration": 0.5
   },
-  "FFP2": {
+  "Ffp2": {
     "name": "FFP2",
     "attackType": "distance",
     "damage": 30,

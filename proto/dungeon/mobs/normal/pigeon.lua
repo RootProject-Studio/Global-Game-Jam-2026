@@ -36,6 +36,15 @@ function Pigeon:new(data)
 
     m.state = "idle" -- idle | dash | cooldown
 
+    m.currentFrame = 1
+    m.frameTime = 0
+    m.frameDelay = 0.1
+
+    m.image = {
+        love.graphics.newImage("dungeon/mobs/normal/assets/pigeon1.png"),
+        love.graphics.newImage("dungeon/mobs/normal/assets/pigeon2.png")
+    }
+
     return m
 end
 
@@ -44,6 +53,8 @@ end
 ----------------------------------------------------------------
 function Pigeon:update(dt, ctx)
     if not ctx.playerX or not ctx.playerY then return end
+
+    isMoving = false
 
     -- Positions absolues
     local myX = self.relX * ctx.roomWidth
@@ -91,15 +102,21 @@ function Pigeon:update(dt, ctx)
             moveX = -dx / dist
             moveY = -dy / dist
 
+            isMoving = true
+
         -- Trop proche → s’éloigner
         elseif dist < targetDist - tolerance then
             moveX = dx / dist
             moveY = dy / dist
 
+            isMoving = true
+
         -- Bonne distance → orbite
         else
             moveX = -dy / dist
             moveY = dx / dist
+
+            isMoving = true
         end
 
         local speed = self.speed
@@ -109,7 +126,6 @@ function Pigeon:update(dt, ctx)
 
         myX = myX + moveX * speed * dt
         myY = myY + moveY * speed * dt
-
 
     ------------------------------------------------------------
     -- DASH
@@ -185,6 +201,8 @@ function Pigeon:update(dt, ctx)
 
             myX = myX + fleeX * move
             myY = myY + fleeY * move
+
+            isMoving = true
         end
 
         if self.cooldownTimer >= self.cooldownTime and dist >= self.placementRadius then
@@ -198,6 +216,20 @@ function Pigeon:update(dt, ctx)
     -- Clamp salle
     self.relX = math.max(0, math.min(1, myX / ctx.roomWidth))
     self.relY = math.max(0, math.min(1, myY / ctx.roomHeight))
+
+    if isMoving then
+        self.frameTime = self.frameTime + dt
+        if self.frameTime >= self.frameDelay then
+            self.frameTime = 0
+            self.currentFrame = self.currentFrame + 1
+            if self.currentFrame > #self.image then
+                self.currentFrame = 1
+            end
+        end
+    else
+        self.frameTime = 0
+        self.currentFrame = 1
+    end
 end
 
 ----------------------------------------------------------------
@@ -208,28 +240,30 @@ function Pigeon:draw(ctx)
     local x = ctx.roomX + self.relX * ctx.roomWidth
     local y = ctx.roomY + self.relY * ctx.roomHeight
 
-    -- Couleur du pigeon selon état
-    if self.state == "dash" then
-        love.graphics.setColor(1, 0.2, 0.2)
-    elseif self.state == "cooldown" then
-        love.graphics.setColor(1, 0.7, 0.2)
-    else
-        love.graphics.setColor(0.7, 0.4, 0.8)
+
+    if self.image and self.image[self.currentFrame] then
+        love.graphics.setColor(1, 1, 1)
+        local img = self.image[self.currentFrame]
+        local imgWidth = img:getWidth()
+        local imgHeight = img:getHeight()
+        local scaleX = (self.size * 10) / imgWidth
+        local scaleY = (self.size * 10) / imgHeight
+        love.graphics.draw(img, x, y, 0, scaleX, scaleY, imgWidth/2, imgHeight/2)
+    
+        -- Barre de vie
+        if self.maxHP > 1 then
+            local barWidth = self.size * scale * 2
+            local barHeight = 3 * scale
+            local barY = y - (imgHeight * scaleY / 3) - 8
+
+            love.graphics.rectangle("fill", x - barWidth/2, barY, barWidth, barHeight)
+            love.graphics.setColor(0, 1, 0)
+            love.graphics.rectangle("fill", x - barWidth/2, barY, barWidth * (self.hp/self.maxHP), barHeight)
+        end
+    
     end
 
-    love.graphics.circle("fill", x, y, self.size)
-
-    -- Barre de vie
-    if self.maxHP > 1 then
-        local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
-
-        local barWidth = self.size * scale * 2
-        local barHeight = 3 * scale
-        love.graphics.rectangle("fill", x - barWidth/2, y - self.size*scale - 6, barWidth, barHeight)
-        love.graphics.setColor(0, 1, 0)
-        love.graphics.rectangle("fill", x - barWidth/2, y - self.size*scale - 6, barWidth * (self.hp/self.maxHP), barHeight)
-
-    end
+    
 
 
     -- DEBUG : cercles centrés sur le player
