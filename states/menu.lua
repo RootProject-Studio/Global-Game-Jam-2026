@@ -1,5 +1,6 @@
 local Transitions = require("transitions")
 local GameStateManager = require("gamestate")
+local AudioManager = require("audio_manager")
 
 local MenuState = {
     buttons = {},
@@ -7,6 +8,11 @@ local MenuState = {
 }
 
 function MenuState:enter()
+    -- Jouer la musique du menu
+    if not AudioManager:isMusicPlaying() then
+        AudioManager:fadeInMusic("music/menu.ogg", 1.0, 0.5)
+    end
+    
     self.buttons = {
         {x = 0, y = 0, width = 200, height = 50, label = "Jouer", action = function() 
             Transitions:start("slideUp", 0.5)

@@ -1,5 +1,6 @@
 local GameStateManager = require("gamestate")
 local Transitions = require("transitions")
+local AudioManager = require("audio_manager")
 local MenuState = require("states.menu")
 local GameState = require("states.game")
 local CreditsState = require("states.credits")
@@ -54,6 +55,7 @@ end
 function love.update(dt)
     GameStateManager:update(dt)
     Transitions:update(dt)
+    AudioManager:update(dt)
 end
 
 function love.draw()

@@ -1,7 +1,13 @@
 local CreditsState = {}
 local GameStateManager = require("gamestate")
+local AudioManager = require("audio_manager")
 
 function CreditsState:enter()
+    -- Jouer la musique du menu seulement si elle ne joue pas déjà
+    if not AudioManager:isMusicPlaying() then
+        AudioManager:fadeInMusic("music/menu.ogg", 1.0, 0.5)
+    end
+    
     self.scrollY = 600
     self.scrollSpeed = 30
     self.scrollSpeedBase = self.scrollSpeed

@@ -8,8 +8,12 @@ local Pedro            = require("dungeon.mobs.player.pedro")
 local Cyclope          = require("dungeon.masks.cyclope")
 local Ffp2 = require("dungeon.masks.ffp2")
 local Scream           = require("dungeon.masks.scream")
+local AudioManager     = require("audio_manager")
 
 function GameState:enter()
+    -- Jouer la musique du jeu avec transition fluide
+    -- Si une musique joue (du menu), elle fera un fondu vers la nouvelle
+    AudioManager:fadeInMusic("music/a_boss.ogg", 1.0, 0.5)
 
     self.player = Pedro:new()
     local cyclope = Cyclope:new()
@@ -469,6 +473,8 @@ function GameState:keypressed(key)
 end
 
 function GameState:exit()
+    -- Revenir à la musique du menu avec transition fluide
+    AudioManager:fadeInMusic("music/menu.ogg", 0.5, 0.5)
 end
 
 -- Gestion du redimensionnement
