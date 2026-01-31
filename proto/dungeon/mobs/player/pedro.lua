@@ -11,17 +11,18 @@ function Pedro:new()
     obj.y = 300
     obj.width = 64    
     obj.height = 64   
-    obj.size = 32     
+    obj.size = 32
+
     
     -- Propriétés de la hitbox elliptique
     obj.hitboxRadiusX = 50  -- Rayon horizontal (plus long gauche-droite)
     obj.hitboxRadiusY = 30  -- Rayon vertical (plus court haut-bas)
     
-    obj.speed = 200
+    obj.speed = 400
     obj.vx = 0
     obj.vy = 0
-    obj.hp = 100
-    obj.maxHp = 100
+    obj.hp = 20
+    obj.maxHp = 20
     obj.type = "player"
     
     -- Propriétés spécifiques à Pedro
@@ -42,6 +43,11 @@ function Pedro:update(dt)
     -- Récupérer les touches enfoncées
     local keys = _G.gameConfig.keys
     
+        -- cooldown pour les dégâts
+    if self.hitCooldown and self.hitCooldown > 0 then
+        self.hitCooldown = self.hitCooldown - dt
+    end
+
     -- Réinitialiser la vélocité
     self.vx = 0
     self.vy = 0
@@ -88,31 +94,42 @@ function Pedro:update(dt)
 end
 
 function Pedro:draw()
+    -- Dessin du joueur
     if self.image and self.image[self.currentFrame] then
         love.graphics.setColor(1, 1, 1)
-        -- Dessiner l'image centrée à la position du joueur
-        -- Récupérer la taille de l'image originale
         local img = self.image[self.currentFrame]
         local imgWidth = img:getWidth()
         local imgHeight = img:getHeight()
-        
-        -- Calculer l'échelle pour adapter l'image à la taille de la hitbox
-        local scaleX = (self.hitboxRadiusX * 2) / imgWidth  -- Utiliser la hitbox elliptique
-        local scaleY = (self.hitboxRadiusY * 2) / imgHeight -- Utiliser la hitbox elliptique
-        
-        -- Dessiner l'image centrée sur la position (centre de la hitbox)
-        love.graphics.draw(
-            img,
-            self.x,                   -- Position X (centre de la hitbox)
-            self.y,                   -- Position Y (centre de la hitbox)
-            0,                         -- Rotation
-            scaleX,                    -- Scale X
-            scaleY,                    -- Scale Y
-            imgWidth / 2,              -- Origin X (centre de l'image)
-            imgHeight / 2              -- Origin Y (centre de l'image)
-        )
+        local scaleX = (self.hitboxRadiusX * 2) / imgWidth
+        local scaleY = (self.hitboxRadiusY * 2) / imgHeight
+        love.graphics.draw(img, self.x, self.y, 0, scaleX, scaleY, imgWidth/2, imgHeight/2)
+    end
+
+    -- Barre de vie du joueur (en bas à droite)
+    if self.maxHp and self.hp then
+        local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+        local width = 200 * scale
+        local height = 15 * scale
+        local margin = 20 * scale
+
+        local x0 = _G.gameConfig.windowWidth - width - margin - 100
+        local y0 = _G.gameConfig.windowHeight - height - margin
+
+        -- Fond rouge
+        love.graphics.setColor(0.5,0,0)
+        love.graphics.rectangle("fill", x0, y0, width, height)
+
+        -- Vie verte
+        love.graphics.setColor(0,1,0)
+        love.graphics.rectangle("fill", x0, y0, width * (self.hp/self.maxHp), height)
+
+        -- Contour noir
+        love.graphics.setColor(0,0,0)
+        love.graphics.setLineWidth(2)
+        love.graphics.rectangle("line", x0, y0, width, height)
     end
 end
+
 
 function Pedro:getPosition()
     return self.x, self.y

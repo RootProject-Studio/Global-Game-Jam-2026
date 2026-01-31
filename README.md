@@ -16,9 +16,9 @@ il peut aller voir la tortue pape pour changer des emotions en masque (un pouvoi
 - le renard narcissique
 - un levrier afghan qui possède des thunes (qui se déplace sur un rumba)
 - un canard orange avec le masque (donald trump avec la casquette MAGA et un pensement sur l'oreille)
-- scarface dodo
+- scarface taupe
 - daf punk chikmaunks
-- dark vador vers de terre
+- dark vador dodo
 - the mask en kangourou
 
 ### les mob :

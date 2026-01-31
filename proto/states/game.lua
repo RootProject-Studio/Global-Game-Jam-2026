@@ -33,7 +33,7 @@ function GameState:enter()
     self.baseRoomHeight = 500
     self.basePlayerX = 400
     self.basePlayerY = 300
-    self.basePlayerSpeed = 400
+    self.basePlayerSpeed = 800
     self.basePlayerSize = 20
     
     -- Mode de visualisation
@@ -190,31 +190,76 @@ function GameState:drawDebugInfo()
     local fontSize = math.max(12, 12 * scale)
     love.graphics.setNewFont(fontSize)
     
-    -- Espacement adapté à l'échelle
-    local padding = 20 * scale  -- Espacement de départ
-    local lineHeight = 20 * scale  -- Hauteur entre les lignes
-    local startY = padding
+    local padding = 20 * scale      -- marge depuis le bord
+    local lineHeight = 20 * scale   -- espace entre lignes
     local startX = padding
+    local startY = padding
     
-    -- Affichage en haut à gauche
-    love.graphics.print("=== DEBUGGING ===", startX, startY)
-    love.graphics.print("Type de salle: " .. self.currentRoom.type, startX, startY + lineHeight * 1)
-    love.graphics.print("Position grille: (" .. self.currentRoom.gridX .. ", " .. self.currentRoom.gridY .. ")", startX, startY + lineHeight * 2)
-    love.graphics.print("Position joueur: (" .. math.floor(self.player.x) .. ", " .. math.floor(self.player.y) .. ")", startX, startY + lineHeight * 3)
-    love.graphics.print("Vitesse: (" .. math.floor(self.player.vx) .. ", " .. math.floor(self.player.vy) .. ")", startX, startY + lineHeight * 4)
-    love.graphics.print("Taille fenetre: " .. _G.gameConfig.windowWidth .. "x" .. _G.gameConfig.windowHeight, startX, startY + lineHeight * 5)
-    love.graphics.print("Echelle: " .. string.format("%.2f", scale), startX, startY + lineHeight * 6)
-    
-    -- Affichage des portes disponibles
+    local line = 0  -- compteur de lignes
+
+    -- En-tête
+    love.graphics.print("=== DEBUGGING ===", startX, startY + lineHeight * line)
+    line = line + 1
+
+    -- Type de salle
+    love.graphics.print("Type de salle: " .. self.currentRoom.type, startX, startY + lineHeight * line)
+    line = line + 1
+
+    -- Position grille
+    love.graphics.print(
+        "Position grille: (" .. self.currentRoom.gridX .. ", " .. self.currentRoom.gridY .. ")",
+        startX,
+        startY + lineHeight * line
+    )
+    line = line + 1
+
+    -- Position joueur
+    love.graphics.print(
+        "Position joueur: (" .. math.floor(self.player.x) .. ", " .. math.floor(self.player.y) .. ")",
+        startX,
+        startY + lineHeight * line
+    )
+    line = line + 1
+
+    -- Vitesse joueur
+    love.graphics.print(
+        "Vitesse: (" .. math.floor(self.player.vx) .. ", " .. math.floor(self.player.vy) .. ")",
+        startX,
+        startY + lineHeight * line
+    )
+    line = line + 1
+
+    -- PV joueur
+    love.graphics.print(
+        "PV joueur: " .. (self.player.hp or 0) .. " / " .. (self.player.maxHp or 0),
+        startX,
+        startY + lineHeight * line
+    )
+    line = line + 1
+
+    -- Taille fenêtre
+    love.graphics.print(
+        "Taille fenêtre: " .. _G.gameConfig.windowWidth .. "x" .. _G.gameConfig.windowHeight,
+        startX,
+        startY + lineHeight * line
+    )
+    line = line + 1
+
+    -- Echelle
+    love.graphics.print("Echelle: " .. string.format("%.2f", scale), startX, startY + lineHeight * line)
+    line = line + 1
+
+    -- Portes disponibles
     local doorsText = "Portes: "
     if self.currentRoom.doors.top then doorsText = doorsText .. "H " end
     if self.currentRoom.doors.bottom then doorsText = doorsText .. "B " end
     if self.currentRoom.doors.left then doorsText = doorsText .. "G " end
     if self.currentRoom.doors.right then doorsText = doorsText .. "D " end
     if doorsText == "Portes: " then doorsText = doorsText .. "Aucune" end
-    love.graphics.print(doorsText, startX, startY + lineHeight * 6)
+    love.graphics.print(doorsText, startX, startY + lineHeight * line)
+    line = line + 1
 
-    -- Liste des mobs présents
+    -- Liste des mobs
     if self.currentRoom.mobs and #self.currentRoom.mobs > 0 then
         local mobsText = "Mobs: "
         for i, mob in ipairs(self.currentRoom.mobs) do
@@ -223,12 +268,12 @@ function GameState:drawDebugInfo()
                 mobsText = mobsText .. ", "
             end
         end
-        love.graphics.print(mobsText, startX, startY + lineHeight * 7)
+        love.graphics.print(mobsText, startX, startY + lineHeight * line)
     else
-        love.graphics.print("Mobs: Aucun", startX, startY + lineHeight * 7)
+        love.graphics.print("Mobs: Aucun", startX, startY + lineHeight * line)
     end
-
 end
+
 
 function GameState:drawDoors()
     local doorWidth = 60 * _G.gameConfig.scaleX
@@ -396,7 +441,8 @@ function GameState:updateMobs(dt)
             roomHeight = roomH,
             playerX = self.player.x,
             playerY = self.player.y,
-            scale = scale
+            scale = scale,
+            player = self.player
         })
     end
 

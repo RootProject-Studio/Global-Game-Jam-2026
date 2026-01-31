@@ -7,6 +7,7 @@ function Rat:new(data)
     data.subtype = "rat"
     data.speed = 60          -- pixels par seconde
     data.size = 14           -- rayon du Rat
+    data.maxHP = data.maxHP or 3  -- PV max
 
     local m = Mob.new(self, data)
     m.dir = math.random() * 2 * math.pi  -- direction aléatoire
@@ -59,6 +60,18 @@ function Rat:draw(ctx)
 
     love.graphics.setColor(0.3, 0.8, 0.8)
     love.graphics.circle("fill", x, y, self.size)
+
+    -- Barre de vie
+    if self.maxHP > 1 then
+        local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+
+        local barWidth = self.size * scale * 2
+        local barHeight = 3 * scale
+        love.graphics.rectangle("fill", x - barWidth/2, y - self.size*scale - 6, barWidth, barHeight)
+        love.graphics.setColor(0, 1, 0)
+        love.graphics.rectangle("fill", x - barWidth/2, y - self.size*scale - 6, barWidth * (self.hp/self.maxHP), barHeight)
+
+    end
 end
 
 return Rat
