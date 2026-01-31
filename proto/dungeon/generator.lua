@@ -24,7 +24,7 @@ DungeonGenerator.ROOM_TYPES = {
 DungeonGenerator.config = {
     minRooms = 10,
     maxRooms = 18,
-    gridSize = 13, -- Grille 13x13 comme dans TBOI
+    gridSize = 20, -- Grille 13x13 comme dans TBOI
     -- Boss et Shop sont toujours présents et dans des impasses
 }
 
