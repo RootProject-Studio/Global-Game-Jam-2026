@@ -181,21 +181,18 @@ function GameState:draw()
         self:drawDebugInfo()
     end
 
-    -- Dessiner les mobs
+    -- Dessiner les mobs de la salle
     if self.currentRoom.mobs then
         for _, mob in ipairs(self.currentRoom.mobs) do
-            if mob.type == "boss" then
-                love.graphics.setColor(1, 0, 0)
-            else
-                love.graphics.setColor(0.8, 0.3, 0.3)
-            end
-
-            local mobX = self.roomX + mob.relX * self.roomWidth
-            local mobY = self.roomY + mob.relY * self.roomHeight
-
-            love.graphics.circle("fill", mobX, mobY, 15 * _G.gameConfig.scaleX)
+            mob:draw({
+                roomX = self.roomX,
+                roomY = self.roomY,
+                roomWidth = self.roomWidth,
+                roomHeight = self.roomHeight
+            })
         end
     end
+
 
 
 
@@ -240,6 +237,21 @@ function GameState:drawDebugInfo()
     if self.currentRoom.doors.right then doorsText = doorsText .. "D " end
     if doorsText == "Portes: " then doorsText = doorsText .. "Aucune" end
     love.graphics.print(doorsText, startX, startY + lineHeight * 6)
+
+    -- Liste des mobs présents
+    if self.currentRoom.mobs and #self.currentRoom.mobs > 0 then
+        local mobsText = "Mobs: "
+        for i, mob in ipairs(self.currentRoom.mobs) do
+            mobsText = mobsText .. (mob.subtype or mob.type or "unknown")
+            if i < #self.currentRoom.mobs then
+                mobsText = mobsText .. ", "
+            end
+        end
+        love.graphics.print(mobsText, startX, startY + lineHeight * 7)
+    else
+        love.graphics.print("Mobs: Aucun", startX, startY + lineHeight * 7)
+    end
+
 end
 
 function GameState:drawDoors()

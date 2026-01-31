@@ -2,11 +2,15 @@
 -- Générateur de labyrinthe style The Binding of Isaac
 
 
-local Mob = require("dungeon.mob")
+local Mob = require("dungeon.mobs.mob")
+local MobFactory = require("dungeon.mobs.factory")
 
 
 
 local DungeonGenerator = {}
+DungeonGenerator.NORMAL_MOBS = { "slime"}
+DungeonGenerator.BOSS_MOBS   = { "guardian"}
+
 
 -- Types de salles
 DungeonGenerator.ROOM_TYPES = {
@@ -373,30 +377,46 @@ end
 function DungeonGenerator:populateRooms()
     for _, room in ipairs(self.rooms) do
         room.mobs = {}
-        
-        if room.type == self.ROOM_TYPES.BOSS then
-            local boss = Mob:new(Mob.TYPES.BOSS)
-            -- Position relative à la salle (0 à 1)
-            boss.relX = 0.5
-            boss.relY = 0.5
-            boss.speed = 0  -- le boss reste statique pour l'instant
-            table.insert(room.mobs, boss)
-        elseif room.type == self.ROOM_TYPES.NORMAL then
+
+        -- SALLE DE DÉPART → aucun mob
+        if room.type == self.ROOM_TYPES.START then
+            -- rien
+        end
+
+        -- SALLE NORMALE → mobs normaux aléatoires
+        if room.type == self.ROOM_TYPES.NORMAL then
             local mobCount = math.random(1, 3)
+
+
             for i = 1, mobCount do
-                local mob = Mob:new(Mob.TYPES.NORMAL)
-                mob.relX = 0.2 + math.random() * 0.6
-                mob.relY = 0.2 + math.random() * 0.6
-                mob.speed = 50 + math.random() * 100  -- pixels par seconde
-                -- direction aléatoire (dx, dy normalisé)
-                local angle = math.random() * 2 * math.pi
-                mob.dx = math.cos(angle)
-                mob.dy = math.sin(angle)
-                table.insert(room.mobs, mob)
+                local subtype = self.NORMAL_MOBS[math.random(#self.NORMAL_MOBS)]
+
+
+                table.insert(room.mobs,
+                    MobFactory.create("normal", subtype, {
+                        relX = 0.2 + math.random() * 0.6,
+                        relY = 0.2 + math.random() * 0.6
+                    })
+                )
             end
+        end
+
+        -- SALLE DE BOSS → UN boss
+        if room.type == self.ROOM_TYPES.BOSS then
+
+            local subtype = self.BOSS_MOBS[math.random(#self.BOSS_MOBS)]
+
+
+            table.insert(room.mobs,
+                MobFactory.create("boss", subtype, {
+                    relX = 0.5,
+                    relY = 0.5
+                })
+            )
         end
     end
 end
+
 
 
 

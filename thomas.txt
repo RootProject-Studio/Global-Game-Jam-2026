@@ -1,4 +1,8 @@
 
+TODO
 
-
-- ne pas oubliez prevoir plusieur bosse
+-faire systeme attaque perso
+-faire masque
+-faire deplacement mob + type mob
+-faire boss + pattern
+-faire marchand
