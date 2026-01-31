@@ -471,7 +471,7 @@ function GameState:updateMobs(dt)
             playerX = self.player.x,
             playerY = self.player.y,
             scale = scale,
-            doors = self.currentRoom.doors
+            doors = self.currentRoom.doors,
             player = self.player,
             debugMode = self.debugMode
         })

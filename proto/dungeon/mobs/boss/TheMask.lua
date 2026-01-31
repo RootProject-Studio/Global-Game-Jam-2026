@@ -19,6 +19,14 @@ function TheMask:new(data)
     m.explosions = {}
     m.projectileTimer = 0
     m.projectileInterval = 0.25-- tirer toutes les 0.25s pendant la charge
+    m.maxHP = data.maxHP or 100
+    m.hp = m.maxHP
+    -- Damage settings
+    m.dashDamage = data.dashDamage or 10
+    m.explosionDamage = data.explosionDamage or 10
+    m.dashHitCooldown = data.dashHitCooldown or 0.5
+    m.explosionHitCooldown = data.explosionHitCooldown or 1.0
+    m.dashHasHit = false
     m.nextChargeTime = 1.5  -- Charge aléatoire entre 2-5 secondes
     return m
 end
@@ -90,6 +98,30 @@ function TheMask:update(dt, ctx)
             if self.projectileTimer <= 0 then
                 self:spawnSideProjectiles(ctx)
                 self.projectileTimer = self.projectileInterval
+            end
+
+            -- Apply dash damage if colliding with player (once per dash)
+            if ctx and ctx.player and not self.dashHasHit then
+                local player = ctx.player
+                local absX = ctx.roomX + self.relX * ctx.roomWidth
+                local absY = ctx.roomY + self.relY * ctx.roomHeight
+                local dx = player.x - absX
+                local dy = player.y - absY
+
+                local rx = player.hitboxRadiusX or 10
+                local ry = player.hitboxRadiusY or 10
+                local hitRadiusMultiplier = 1
+                local rxx = rx + (self.size or 0) * hitRadiusMultiplier
+                local ryy = ry + (self.size or 0) * hitRadiusMultiplier
+                local distanceSquared = (dx*dx)/(rxx*rxx) + (dy*dy)/(ryy*ryy)
+
+                if distanceSquared <= 1 then
+                    if not player.hitCooldown or player.hitCooldown <= 0 then
+                        player.hp = math.max(0, player.hp - (self.dashDamage or 3))
+                        player.hitCooldown = self.dashHitCooldown or 0.5
+                        self.dashHasHit = true
+                    end
+                end
             end
         else
             -- Passer à l'état étourdi après 5 secondes
@@ -176,6 +208,27 @@ function TheMask:update(dt, ctx)
     for i = #self.explosions, 1, -1 do
         local e = self.explosions[i]
         e.timer = e.timer + dt
+
+        -- Damage the player once when inside explosion radius
+        if ctx and ctx.player and not e.hasDamaged then
+            local player = ctx.player
+            local progress = math.min(1, e.timer / e.duration)
+            local radius = progress * e.maxRadius * math.min(ctx.roomWidth, ctx.roomHeight)
+            local px = ctx.roomX + e.relX * ctx.roomWidth
+            local py = ctx.roomY + e.relY * ctx.roomHeight
+            local dx = player.x - px
+            local dy = player.y - py
+            local dist = math.sqrt(dx*dx + dy*dy)
+            local playerRadius = player.hitboxRadiusX or 10
+            if dist < radius + playerRadius then
+                if not player.hitCooldown or player.hitCooldown <= 0 then
+                    player.hp = math.max(0, player.hp - (self.explosionDamage or 2))
+                    player.hitCooldown = self.explosionHitCooldown or 1.0
+                end
+                e.hasDamaged = true
+            end
+        end
+
         if e.timer >= e.duration then
             table.remove(self.explosions, i)
         end
@@ -216,6 +269,8 @@ function TheMask:startCharge(ctx)
     self.stateTimer = 0
     -- Reset projectile timer to fire immediately
     self.projectileTimer = 0
+    -- Reset dash hit flag so damage can be applied once during this dash
+    self.dashHasHit = false
 end
 
 function TheMask:stun()
@@ -271,6 +326,7 @@ function TheMask:spawnExplosion(ctx, relX, relY)
         maxRadius = 0.12, -- relative to min(roomWidth,roomHeight)
         color = {1, 0.6, 0}
     }
+    e.hasDamaged = false
     table.insert(self.explosions, e)
 end
 
@@ -294,6 +350,25 @@ function TheMask:draw(ctx)
     end
 
     love.graphics.circle("fill", x, y, self.size)
+    -- Barre de vie (même style que DarkVador)
+    if self.maxHP and self.hp then
+        local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+        local margin = 20 * scale
+        local maxWidth = 400 * scale
+        local height = 20 * scale
+        local x0 = (_G.gameConfig.windowWidth - maxWidth) / 2
+        local y0 = margin
+
+        love.graphics.setColor(0.5,0,0)
+        love.graphics.rectangle("fill", x0, y0, maxWidth, height)
+
+        love.graphics.setColor(0,1,0)
+        love.graphics.rectangle("fill", x0, y0, maxWidth * (self.hp / self.maxHP), height)
+
+        love.graphics.setColor(0,0,0)
+        love.graphics.setLineWidth(2)
+        love.graphics.rectangle("line", x0, y0, maxWidth, height)
+    end
 end
 
 -- Dessiner projectiles
