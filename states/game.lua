@@ -21,6 +21,8 @@ function GameState:enter()
     local scream = Scream:new()
     self.player:equipMask(cyclope)
 
+    self.items = {}
+
     -- Générer un nouveau donjon
     if not DungeonGenerator then
         io.stderr:write("ERREUR: DungeonGenerator non trouvé!\n")
@@ -171,6 +173,23 @@ function GameState:update(dt)
 
     -- Update des mobs
     self:updateMobs(dt)
+
+    -- Update items
+    for _, item in ipairs(self.items) do
+        item:update(dt)
+    end
+
+    -- Collision item<->player
+    self:checkItemCollisions()
+
+    -- Remove collected items
+    local i = #self.items
+    while i >= 1 do
+        if self.items[i]:isDead() then
+            table.remove(self.items, i)
+        end
+        i = i - 1
+    end
 end
 
 function GameState:draw()
@@ -206,6 +225,16 @@ function GameState:draw()
                 debugMode = self.debugMode
             })
         end
+    end
+
+    for _, item in ipairs(self.items) do
+        item:draw({
+            roomX = self.roomX,
+            roomY = self.roomY,
+            roomWidth = self.roomWidth,
+            roomHeight = self.roomHeight,
+            scale = _G.gameConfig.scaleX or 1
+        })
     end
 
     
@@ -512,6 +541,11 @@ function GameState:updateMobs(dt)
     local i = #self.currentRoom.mobs
     while i >= 1 do
         if self.currentRoom.mobs[i]:isDead() then
+            -- Récupérer l'item droppé avant de supprimer le mob
+            local droppedItem = self.currentRoom.mobs[i]:onDeath()
+            if droppedItem then
+                table.insert(self.items, droppedItem)
+            end
             table.remove(self.currentRoom.mobs, i)
         end
         i = i - 1
@@ -610,6 +644,49 @@ function GameState:updateMobs(dt)
     end
 end
 
+function GameState:checkItemCollisions()
+    if not self.player or #self.items == 0 then return end
+    
+    local scale = _G.gameConfig.scaleX or 1
+    local playerRadius = self.player.size or 8
+    
+    for _, item in ipairs(self.items) do
+        local itemPos = item:getAbsolutePos({
+            roomX = self.roomX,
+            roomY = self.roomY,
+            roomWidth = self.roomWidth,
+            roomHeight = self.roomHeight,
+            scale = scale
+        })
+        
+        local dx = self.player.x - itemPos.x
+        local dy = self.player.y - itemPos.y
+        local dist = math.sqrt(dx*dx + dy*dy)
+        local minDist = playerRadius + itemPos.r
+        
+        if dist < minDist then
+            -- Collision! Équiper le masque
+            self:equipMaskFromItem(item.maskType)
+            item:collect()
+        end
+    end
+end
 
+function GameState:equipMaskFromItem(maskType)
+    local Cyclope = require("dungeon.masks.cyclope")
+    local Ffp2 = require("dungeon.masks.ffp2")
+    local Scream = require("dungeon.masks.scream")
+    
+    local maskClass = {
+        cyclope = Cyclope,
+        ffp2 = Ffp2,
+        scream = Scream
+    }
+    
+    if maskClass[maskType] then
+        local newMask = maskClass[maskType]:new()
+        self.player:equipMask(newMask)
+    end
+end
 
 return GameState
