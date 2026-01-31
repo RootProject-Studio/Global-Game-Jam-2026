@@ -508,6 +508,15 @@ function GameState:updateMobs(dt)
         })
     end
 
+    -- 2) Remove dead mobs from the room
+    local i = #self.currentRoom.mobs
+    while i >= 1 do
+        if self.currentRoom.mobs[i]:isDead() then
+            table.remove(self.currentRoom.mobs, i)
+        end
+        i = i - 1
+    end
+
    -- 2) Build absolute positions and radii
     local mobCount = #self.currentRoom.mobs
     local abs = {}
