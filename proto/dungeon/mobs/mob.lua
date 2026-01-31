@@ -5,7 +5,7 @@ function Mob:new(data)
     local m = setmetatable({}, self)
 
     m.category = data.category      -- "normal" | "boss"
-    m.subtype  = data.subtype       -- "slime", "guardian", etc
+    m.subtype  = data.subtype
 
     -- position relative (0 → 1)
     m.relX = data.relX or 0.5

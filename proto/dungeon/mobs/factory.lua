@@ -1,10 +1,9 @@
 local factory = {}
 
 factory.normal = {
-    slime   = require("dungeon.mobs.normal.slime"),
     rat     = require("dungeon.mobs.normal.rat"),
     pigeon  = require("dungeon.mobs.normal.pigeon"),
-    --bat     = require("dungeon.mobs.normal.bat"),
+    blaireau     = require("dungeon.mobs.normal.blaireau"),
     --charger = require("dungeon.mobs.normal.charger"),
 }
 
