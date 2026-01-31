@@ -126,7 +126,7 @@ function DarkVador:launchPattern(barCount)
         local color = math.random() > 0.5 and {1,0,0} or {0,0,1}
         local speed = 0.3
 
-        local proj = {dx=0, dy=0, relX=0, relY=0, size=0.05, color=color, orientation=orientation, damage=1}
+        local proj = {dx=0, dy=0, relX=0, relY=0, size=0.05, color=color, orientation=orientation, damage=25}
 
         if orientation == 3 then -- haut→bas
             proj.relX = 0

@@ -10,7 +10,7 @@ local MobFactory = require("dungeon.mobs.factory")
 local DungeonGenerator = {}
 DungeonGenerator.NORMAL_MOBS = {"rat","pigeon","blaireau"}
 
-DungeonGenerator.BOSS_MOBS   = { "TheMask"}
+DungeonGenerator.BOSS_MOBS   = { "TheMask","DarkVador","Scarface"}
 
 -- Types de salles
 DungeonGenerator.ROOM_TYPES = {
