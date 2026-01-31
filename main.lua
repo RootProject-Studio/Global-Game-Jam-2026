@@ -11,7 +11,6 @@ function love.load()
         resizable = true,
         vsync = true
     })
-
     -- Initialiser la configuration globale du jeu avec dimensions responsives
     _G.gameConfig = {
         -- Dimensions de base pour le calcul des proportions
@@ -23,7 +22,6 @@ function love.load()
         -- Facteurs d'échelle
         scaleX = 1.0,
         scaleY = 1.0,
-
         keys = {
             up = "z",
             down = "s",

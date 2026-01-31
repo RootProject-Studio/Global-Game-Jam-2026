@@ -34,7 +34,6 @@ function CreditsState:enter()
         "",
         ""
     }
-
     self.totalHeight = #self.credits * 40
 end
 
@@ -72,7 +71,6 @@ function CreditsState:draw()
         elseif y > _G.gameConfig.windowHeight - 100 * scale then
             alpha = math.max(0, (_G.gameConfig.windowHeight - y) / (100 * scale))
         end
-
         love.graphics.setColor(1, 1, 1, alpha)
         love.graphics.printf(line, 0, y, _G.gameConfig.windowWidth, "center")
         
@@ -89,7 +87,6 @@ function CreditsState:keypressed(key)
         GameStateManager:setState("menu")
     end
 end
-
 
 function CreditsState:exit()
 end
