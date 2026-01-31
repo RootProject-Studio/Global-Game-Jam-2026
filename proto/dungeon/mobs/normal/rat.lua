@@ -16,12 +16,24 @@ function Rat:new(data)
     m.attackTimer = 0         -- timer interne pour l'attaque
 
     m.dir = math.random() * 2 * math.pi  -- direction aléatoire
+
+    m.currentFrame = 1
+    m.frameTime = 0
+    m.frameDelay = 0.1
+
+    m.image = {
+        love.graphics.newImage("dungeon/mobs/normal/assets/rat1.png"),
+        love.graphics.newImage("dungeon/mobs/normal/assets/rat2.png")
+    }
+
     return m
 end
 
 function Rat:update(dt, ctx)
     local player = ctx.player
     if not player or not ctx.playerX or not ctx.playerY then return end
+
+    isMoving = false
 
     -- Position du Rat en pixels
     local myX = self.relX * ctx.roomWidth
@@ -43,6 +55,8 @@ function Rat:update(dt, ctx)
         local move_px = self.speed * dt
         self.relX = self.relX + (vx * move_px / ctx.roomWidth)
         self.relY = self.relY + (vy * move_px / ctx.roomHeight)
+
+        isMoving = true
     end
 
     -- Clamp pour rester dans la salle
@@ -62,28 +76,52 @@ function Rat:update(dt, ctx)
         end
     end
 
+    if isMoving then
+        self.frameTime = self.frameTime + dt
+        if self.frameTime >= self.frameDelay then
+            self.frameTime = 0
+            self.currentFrame = self.currentFrame + 1
+            if self.currentFrame > #self.image then
+                self.currentFrame = 1
+            end
+        end
+    else
+        self.frameTime = 0
+        self.currentFrame = 1
+    end
 end
 
 
 
 function Rat:draw(ctx)
     -- position absolue dans la salle
+    local scale = ctx.scale or 1
     local x = ctx.roomX + self.relX * ctx.roomWidth
     local y = ctx.roomY + self.relY * ctx.roomHeight
 
-    love.graphics.setColor(0.3, 0.8, 0.8)
-    love.graphics.circle("fill", x, y, self.size)
+    -- love.graphics.setColor(0.3, 0.8, 0.8)
+    -- love.graphics.circle("fill", x, y, self.size)
 
-    -- Barre de vie
-    if self.maxHP > 1 then
-        local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+    if self.image and self.image[self.currentFrame] then
+        love.graphics.setColor(1, 1, 1)
+        local img = self.image[self.currentFrame]
+        local imgWidth = img:getWidth()
+        local imgHeight = img:getHeight()
+        local scaleX = (self.size * 11) / imgWidth
+        local scaleY = (self.size * 11) / imgHeight
+        love.graphics.draw(img, x, y, 0, scaleX, scaleY, imgWidth/2, imgHeight/2)
+    
+        -- Barre de vie
+        if self.maxHP > 1 then
+            local barWidth = self.size * scale * 2
+            local barHeight = 3 * scale
+            local barY = y - (imgHeight * scaleY / 3) - 8
 
-        local barWidth = self.size * scale * 2
-        local barHeight = 3 * scale
-        love.graphics.rectangle("fill", x - barWidth/2, y - self.size*scale - 6, barWidth, barHeight)
-        love.graphics.setColor(0, 1, 0)
-        love.graphics.rectangle("fill", x - barWidth/2, y - self.size*scale - 6, barWidth * (self.hp/self.maxHP), barHeight)
-
+            love.graphics.rectangle("fill", x - barWidth/2, barY, barWidth, barHeight)
+            love.graphics.setColor(0, 1, 0)
+            love.graphics.rectangle("fill", x - barWidth/2, barY, barWidth * (self.hp/self.maxHP), barHeight)
+        end
+    
     end
 end
 
