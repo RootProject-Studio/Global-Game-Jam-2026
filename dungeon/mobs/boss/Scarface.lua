@@ -40,6 +40,14 @@ function Scarface:new(data)
     m.emergeDamage  = 2          -- dégâts de remontée
     m.trailHitRadius = 0.04      -- rayon de collision d'un point de traînée (relatif)
 
+    m.currentFrame = 1
+    m.frameTime = 0
+    m.frameDelay = 0.1
+
+    m.image = {
+        love.graphics.newImage("dungeon/mobs/boss/assets/taupe.png")
+    }
+
     return m
 end
 
@@ -232,35 +240,56 @@ function Scarface:draw(ctx)
     end
 
     -- ── Point de remontée (indice visuel) ────
-    if self.emergePoint and (self.state == "underground" or self.state == "emerging") then
-        local t = self.stateTimer
-        local pulse = 0.5 + 0.5 * math.sin(t * 8)
-        love.graphics.setColor(1, 0.8, 0, 0.4 + 0.4 * pulse)
-        local ex = ctx.roomX + self.emergePoint.relX * ctx.roomWidth
-        local ey = ctx.roomY + self.emergePoint.relY * ctx.roomHeight
-        local emergeRadius = 0.12 * math.max(ctx.roomWidth, ctx.roomHeight)
-        love.graphics.circle("fill", ex, ey, emergeRadius)
-    end
+    -- if self.emergePoint and (self.state == "underground" or self.state == "emerging") then
+    --     local t = self.stateTimer
+    --     local pulse = 0.5 + 0.5 * math.sin(t * 8)
+    --     love.graphics.setColor(1, 0.8, 0, 0.4 + 0.4 * pulse)
+    --     local ex = ctx.roomX + self.emergePoint.relX * ctx.roomWidth
+    --     local ey = ctx.roomY + self.emergePoint.relY * ctx.roomHeight
+    --     local emergeRadius = 0.12 * math.max(ctx.roomWidth, ctx.roomHeight)
+    --     love.graphics.circle("fill", ex, ey, emergeRadius)
+    -- end
 
     -- ── Corps du boss (invisible sous terre) ─
-    if self.state ~= "underground" then
-        local x = ctx.roomX + self.relX * ctx.roomWidth
-        local y = ctx.roomY + self.relY * ctx.roomHeight
+    -- if self.state ~= "underground" then
+    --     local x = ctx.roomX + self.relX * ctx.roomWidth
+    --     local y = ctx.roomY + self.relY * ctx.roomHeight
 
-        if self.state == "stunned" then
-            love.graphics.setColor(0.8, 0.2, 0.2, 0.5)
-            love.graphics.circle("fill", x, y, self.size * scale * 1.3)
+    --     if self.state == "stunned" then
+    --         love.graphics.setColor(0.8, 0.2, 0.2, 0.5)
+    --         love.graphics.circle("fill", x, y, self.size * scale * 1.3)
+    --     end
+
+    --     love.graphics.setColor(0.15, 0.15, 0.25)
+    --     love.graphics.circle("fill", x, y, self.size * scale)
+
+    --     love.graphics.setColor(0.7, 0.1, 0.1)
+    --     love.graphics.setLineWidth(3)
+    --     love.graphics.line(
+    --         x - self.size * scale * 0.3, y - self.size * scale * 0.6,
+    --         x + self.size * scale * 0.1, y + self.size * scale * 0.2
+    --     )
+    -- end
+
+    local x = ctx.roomX + self.relX * ctx.roomWidth
+    local y = ctx.roomY + self.relY * ctx.roomHeight
+
+    if self.image and self.image[self.currentFrame] then
+        -- Ajuster l'opacité selon l'état
+        local alpha = 1.0
+        if self.state == "underground" then
+            alpha = 0.3  -- 30% visible sous terre
+        elseif self.state == "emerging" then
+            alpha = 0.6  -- 60% visible en train d'émerger
         end
-
-        love.graphics.setColor(0.15, 0.15, 0.25)
-        love.graphics.circle("fill", x, y, self.size * scale)
-
-        love.graphics.setColor(0.7, 0.1, 0.1)
-        love.graphics.setLineWidth(3)
-        love.graphics.line(
-            x - self.size * scale * 0.3, y - self.size * scale * 0.6,
-            x + self.size * scale * 0.1, y + self.size * scale * 0.2
-        )
+        
+        love.graphics.setColor(1, 1, 1, alpha)
+        local img = self.image[self.currentFrame]
+        local imgWidth = img:getWidth()
+        local imgHeight = img:getHeight()
+        local scaleX = (self.size * 5) / imgWidth
+        local scaleY = (self.size * 5) / imgHeight
+        love.graphics.draw(img, x, y, 0, scaleX, scaleY, imgWidth/2, imgHeight/2)
     end
 
     -- ── Barre de vie ─────────────────────────
