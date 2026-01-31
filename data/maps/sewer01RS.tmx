@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="20" height="20" tilewidth="20" tileheight="20" infinite="0" nextlayerid="3" nextobjectid="1">
  <tileset firstgid="1" source="sewer_tileset.tsx"/>
+ <tileset firstgid="337" name="Lo_bit_city_set" tilewidth="20" tileheight="20" tilecount="1296" columns="48">
+  <image source="../../assets/LO BIT CITY/Lo_bit_city_set.png" trans="ff04d4" width="960" height="540"/>
+ </tileset>
  <layer id="1" name="terrain" width="20" height="20">
   <data encoding="csv">
 43,44,44,44,44,44,44,44,44,48,44,44,44,44,44,44,44,44,44,45,
