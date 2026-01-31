@@ -1,18 +1,22 @@
 local Mask = require("dungeon.masks.mask")
+local ConfigLoader = require("dungeon.masks.config_loader")
 local Scream = setmetatable({}, {__index = Mask})
 Scream.__index = Scream
 
 function Scream:new()
     local obj = setmetatable({}, self)
-    obj.name = "Scream"
-    obj.attackType = "distance" -- La distance sera très courte
-    obj.damage = 25
 
-    obj.rayLength = 25
-    obj.rayWidth = 5
-    obj.shootCooldown = 0.1
+    local config = ConfigLoader.getMaskConfig("Scream")
+
+    obj.name = config.name
+    obj.attackType = config.attackType -- La distance sera très courte
+    obj.damage = config.damage
+
+    obj.rayLength = config.rayLength
+    obj.rayWidth = config.rayWidth
+    obj.shootCooldown = config.shootCooldown
     obj.shootTimer = 0
-    obj.rayDuration = 0.5
+    obj.rayDuration = config.rayDuration
     obj.rayActive = false
     obj.rayTimer = 0
 

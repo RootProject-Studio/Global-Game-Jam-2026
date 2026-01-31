@@ -1,20 +1,27 @@
 local Mask = require("dungeon.masks.mask")
+local ConfigLoader = require("dungeon.masks.config_loader")
 local Cyclope = setmetatable({}, {__index = Mask})
 Cyclope.__index = Cyclope
 
 function Cyclope:new()
     local obj = setmetatable({}, self)
-    obj.name = "Cyclope"
-    obj.attackType = "distance"
-    obj.damage = 50  -- Dégâts bonus apportés par Cyclope
-    obj.damageMultiplier = 1.5  -- Multiplicateur de dégâts (50% bonus)
+    
+    -- Charger la configuration depuis le JSON
+    local config = ConfigLoader.getMaskConfig("Cyclope")
+    
+    -- Appliquer les propriétés depuis la configuration
+    obj.name = config.name
+    obj.attackType = config.attackType
+    obj.damage = config.damage
+    obj.damageMultiplier = config.damageMultiplier
+    obj.cooldown = config.cooldown
     
     -- Propriétés du rayon laser
-    obj.rayLength = 400  -- Longueur du rayon
-    obj.rayWidth = 30    -- Largeur du rayon (épaisseur)
-    obj.shootCooldown = 2.5  -- Gros cooldown (2.5 secondes)
+    obj.rayLength = config.rayLength
+    obj.rayWidth = config.rayWidth
+    obj.shootCooldown = config.shootCooldown
     obj.shootTimer = 0
-    obj.rayDuration = 0.5  -- Durée du rayon visible (en secondes) - augmenté pour être bien visible
+    obj.rayDuration = config.rayDuration
     obj.rayActive = false
     obj.rayTimer = 0
     

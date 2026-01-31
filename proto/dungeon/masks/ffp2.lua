@@ -1,19 +1,23 @@
 local Mask = require("dungeon.masks.mask")
+local ConfigLoader = require("dungeon.masks.config_loader")
 local Ffp2 = setmetatable({}, {__index = Mask})
 Ffp2.__index = Ffp2
 
 function Ffp2:new()
     local obj = setmetatable({}, self)
-    obj.name = "Ffp2"
-    obj.attackType = "distance"
-    obj.damage = -5  -- Dégâts bonus apportés par Ffp2
+
+    local config = ConfigLoader.getMaskConfig("Ffp2")
+
+    obj.name = config.name
+    obj.attackType = config.attackType
+    obj.damage = config.damage  -- Dégâts bonus apportés par Ffp2
     
     -- Propriétés du rayon laser
-    obj.rayLength = 150  -- Longueur du rayon
-    obj.rayWidth = 5    -- Largeur du rayon (épaisseur)
-    obj.shootCooldown = 0.2  -- Gros cooldown (2.5 secondes)
+    obj.rayLength = config.rayLength  -- Longueur du rayon
+    obj.rayWidth = config.rayWidth    -- Largeur du rayon (épaisseur)
+    obj.shootCooldown = config.shootCooldown  -- Gros cooldown (2.5 secondes)
     obj.shootTimer = 0
-    obj.rayDuration = 0.5  -- Durée du rayon visible (en secondes) - augmenté pour être bien visible
+    obj.rayDuration = config.rayDuration  -- Durée du rayon visible (en secondes) - augmenté pour être bien visible
     obj.rayActive = false
     obj.rayTimer = 0
     

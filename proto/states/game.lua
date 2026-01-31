@@ -15,7 +15,7 @@ function GameState:enter()
     local cyclope = Cyclope:new()
     local ffp2 = Ffp2:new()
     local scream = Scream:new()
-    self.player:equipMask(scream)
+    self.player:equipMask(cyclope)
 
     -- Générer un nouveau donjon
     self.generator = DungeonGenerator:new()
