@@ -4,8 +4,15 @@
 local GameState = {}
 local GameStateManager = require("gamestate")
 local DungeonGenerator = require("dungeon.generator")
+local Pedro            = require("dungeon.mobs.player.pedro")
+local Cyclope          = require("dungeon.masks.cyclope")
 
 function GameState:enter()
+
+    self.player = Pedro:new()
+    local cyclope = Cyclope:new()
+    self.player:equipMask(cyclope)
+
     -- Générer un nouveau donjon
     self.generator = DungeonGenerator:new()
     self.dungeon = self.generator:generate()
@@ -31,14 +38,6 @@ function GameState:enter()
     self.basePlayerY = 300
     self.basePlayerSpeed = 400
     self.basePlayerSize = 20
-    
-    -- Position du joueur (centre de la salle)
-    self.player = {
-        x = self.basePlayerX,
-        y = self.basePlayerY,
-        speed = self.basePlayerSpeed,
-        size = self.basePlayerSize
-    }
     
     -- Mode de visualisation
     self.showMap = true
@@ -69,10 +68,10 @@ function GameState:updateLayout()
     
     -- Position et vitesse du joueur (relative au centre)
     -- Garder les positions relatives à la salle
-    self.player.x = self.roomX + (self.basePlayerX - self.baseRoomX) * scale
-    self.player.y = self.roomY + (self.basePlayerY - self.baseRoomY) * scale
-    self.player.speed = self.basePlayerSpeed * scale -- Adapter la vitesse à l'échelle
-    self.player.size = self.basePlayerSize * scale
+    -- self.player.x = self.roomX + (self.basePlayerX - self.baseRoomX) * scale
+    -- self.player.y = self.roomY + (self.basePlayerY - self.baseRoomY) * scale
+    -- self.player.speed = self.basePlayerSpeed * scale -- Adapter la vitesse à l'échelle
+    -- self.player.size = self.basePlayerSize * scale
     
     -- Carte (échelle réduite pour rester proportionnelle)
     self.mapScale = self.baseMapScale * math.min(scale, 0.8) -- Limiter l'agrandissement de la carte
@@ -81,80 +80,75 @@ function GameState:updateLayout()
 end
 
 function GameState:update(dt)
-    -- Déplacement du joueur
-    local keys = _G.gameConfig.keys
-    
-    local moveSpeed = self.player.speed * dt
-    local newX = self.player.x
-    local newY = self.player.y
-    
-    if love.keyboard.isDown(keys.up) then
-        newY = newY - moveSpeed
-    end
-    if love.keyboard.isDown(keys.down) then
-        newY = newY + moveSpeed
-    end
-    if love.keyboard.isDown(keys.left) then
-        newX = newX - moveSpeed
-    end
-    if love.keyboard.isDown(keys.right) then
-        newX = newX + moveSpeed
+    -- Update du joueur (Pedro gère son propre mouvement)
+    if self.player then
+        -- Créer le contexte de la salle pour Pedro
+        local roomContext = {
+            roomX = self.roomX,
+            roomY = self.roomY,
+            roomWidth = self.roomWidth,
+            roomHeight = self.roomHeight
+        }
+        self.player:update(dt, roomContext)
     end
     
     -- Vérifier les transitions de salle via les portes
     local doorWidth = 60 * _G.gameConfig.scaleX
     local doorThreshold = 30 * _G.gameConfig.scaleX
+    local playerX = self.player.x
+    local playerY = self.player.y
     
     -- Porte du haut
-    if self.currentRoom.doors.top and newY < self.roomY + doorThreshold then
+    if self.currentRoom.doors.top and playerY < self.roomY + doorThreshold then
         local centerX = self.roomX + self.roomWidth / 2
-        if newX > centerX - doorWidth/2 and newX < centerX + doorWidth/2 then
+        if playerX > centerX - doorWidth/2 and playerX < centerX + doorWidth/2 then
             self:changeRoom(0, -1)
-            self.player.y = self.roomY + self.roomHeight * 0.85 -- Apparaît plus loin du bord en bas de la nouvelle salle
+            self.player.y = self.roomY + self.roomHeight * 0.85
             return
         end
     end
     
     -- Porte du bas
-    if self.currentRoom.doors.bottom and newY > self.roomY + self.roomHeight - doorThreshold then
+    if self.currentRoom.doors.bottom and playerY > self.roomY + self.roomHeight - doorThreshold then
         local centerX = self.roomX + self.roomWidth / 2
-        if newX > centerX - doorWidth/2 and newX < centerX + doorWidth/2 then
+        if playerX > centerX - doorWidth/2 and playerX < centerX + doorWidth/2 then
             self:changeRoom(0, 1)
-            self.player.y = self.roomY + self.roomHeight * 0.15 -- Apparaît plus loin du bord en haut de la nouvelle salle
+            self.player.y = self.roomY + self.roomHeight * 0.15
             return
         end
     end
     
     -- Porte de gauche
-    if self.currentRoom.doors.left and newX < self.roomX + doorThreshold then
+    if self.currentRoom.doors.left and playerX < self.roomX + doorThreshold then
         local centerY = self.roomY + self.roomHeight / 2
-        if newY > centerY - doorWidth/2 and newY < centerY + doorWidth/2 then
+        if playerY > centerY - doorWidth/2 and playerY < centerY + doorWidth/2 then
             self:changeRoom(-1, 0)
-            self.player.x = self.roomX + self.roomWidth * 0.85 -- Apparaît plus loin du bord à droite de la nouvelle salle
+            self.player.x = self.roomX + self.roomWidth * 0.85
             return
         end
     end
     
     -- Porte de droite
-    if self.currentRoom.doors.right and newX > self.roomX + self.roomWidth - doorThreshold then
+    if self.currentRoom.doors.right and playerX > self.roomX + self.roomWidth - doorThreshold then
         local centerY = self.roomY + self.roomHeight / 2
-        if newY > centerY - doorWidth/2 and newY < centerY + doorWidth/2 then
+        if playerY > centerY - doorWidth/2 and playerY < centerY + doorWidth/2 then
             self:changeRoom(1, 0)
-            self.player.x = self.roomX + self.roomWidth * 0.15 -- Apparaît plus loin du bord à gauche de la nouvelle salle
+            self.player.x = self.roomX + self.roomWidth * 0.15
             return
         end
     end
     
-    -- Limiter le joueur aux bords de la salle (avec les murs)
+    -- Limiter le joueur aux bords de la salle
     local margin = self.player.size
-    newX = math.max(self.roomX + margin, math.min(self.roomX + self.roomWidth - margin, newX))
-    newY = math.max(self.roomY + margin, math.min(self.roomY + self.roomHeight - margin, newY))
-    
-    self.player.x = newX
-    self.player.y = newY
+    self.player.x = math.max(self.roomX + margin, math.min(self.roomX + self.roomWidth - margin, self.player.x))
+    self.player.y = math.max(self.roomY + margin, math.min(self.roomY + self.roomHeight - margin, self.player.y))
+    -- Vérifier les collisions des projectiles avec les ennemis (système générique)
+    if self.currentRoom and self.currentRoom.mobs then
+        self.player:checkProjectileCollisions(self.currentRoom.mobs)
+    end
 
+    -- Update des mobs
     self:updateMobs(dt)
-
 end
 
 function GameState:draw()
@@ -164,6 +158,9 @@ function GameState:draw()
     love.graphics.setColor(0.2, 0.2, 0.25)
     love.graphics.rectangle("fill", self.roomX, self.roomY, self.roomWidth, self.roomHeight)
     
+    if self.player then
+        self.player:draw()
+    end
 
         -- Dessiner les mobs de la salle
     if self.currentRoom.mobs then
@@ -172,17 +169,19 @@ function GameState:draw()
                 roomX = self.roomX,
                 roomY = self.roomY,
                 roomWidth = self.roomWidth,
-                roomHeight = self.roomHeight
+                roomHeight = self.roomHeight,
+                playerX = self.player.x,
+                playerY = self.player.y,
+                player = self.player,
+                scale = _G.gameConfig.scaleX or 1,
+                debugMode = self.debugMode
             })
         end
     end
+
     
     -- Dessiner les portes
     self:drawDoors()
-    
-    -- Dessiner le joueur
-    love.graphics.setColor(0.9, 0.8, 0.6)
-    love.graphics.circle("fill", self.player.x, self.player.y, self.player.size)
     
     -- Dessiner la mini-map si activée
     if self.showMap then
@@ -202,7 +201,7 @@ function GameState:draw()
     local fontSize = math.max(12, 12 * scale)
     love.graphics.setNewFont(fontSize)
     local padding = 20 * scale
-    love.graphics.print("D: debug | M: carte | R: regener | Echap: menu", padding, _G.gameConfig.windowHeight - padding - 10)
+    love.graphics.print("P: debug | M: carte | R: regener | Echap: menu", padding, _G.gameConfig.windowHeight - padding - 10)
 end
 
 function GameState:drawDebugInfo()
@@ -211,30 +210,85 @@ function GameState:drawDebugInfo()
     local fontSize = math.max(12, 12 * scale)
     love.graphics.setNewFont(fontSize)
     
-    -- Espacement adapté à l'échelle
-    local padding = 20 * scale  -- Espacement de départ
-    local lineHeight = 20 * scale  -- Hauteur entre les lignes
-    local startY = padding
+    local padding = 20 * scale      -- marge depuis le bord
+    local lineHeight = 20 * scale   -- espace entre lignes
     local startX = padding
+    local startY = padding
     
-    -- Affichage en haut à gauche
-    love.graphics.print("=== DEBUGGING ===", startX, startY)
-    love.graphics.print("Type de salle: " .. self.currentRoom.type, startX, startY + lineHeight * 1)
-    love.graphics.print("Position grille: (" .. self.currentRoom.gridX .. ", " .. self.currentRoom.gridY .. ")", startX, startY + lineHeight * 2)
-    love.graphics.print("Position joueur: (" .. math.floor(self.player.x) .. ", " .. math.floor(self.player.y) .. ")", startX, startY + lineHeight * 3)
-    love.graphics.print("Taille fenetre: " .. _G.gameConfig.windowWidth .. "x" .. _G.gameConfig.windowHeight, startX, startY + lineHeight * 4)
-    love.graphics.print("Echelle: " .. string.format("%.2f", scale), startX, startY + lineHeight * 5)
-    
-    -- Affichage des portes disponibles
+    local line = 0  -- compteur de lignes
+
+    -- En-tête
+    love.graphics.print("=== DEBUGGING ===", startX, startY + lineHeight * line)
+    line = line + 1
+
+    -- Type de salle
+    love.graphics.print("Type de salle: " .. self.currentRoom.type, startX, startY + lineHeight * line)
+    line = line + 1
+
+    -- Position grille
+    love.graphics.print(
+        "Position grille: (" .. self.currentRoom.gridX .. ", " .. self.currentRoom.gridY .. ")",
+        startX,
+        startY + lineHeight * line
+    )
+    line = line + 1
+
+    -- Position joueur
+    love.graphics.print(
+        "Position joueur: (" .. math.floor(self.player.x) .. ", " .. math.floor(self.player.y) .. ")",
+        startX,
+        startY + lineHeight * line
+    )
+    line = line + 1
+
+    -- Vitesse joueur
+    love.graphics.print(
+        "Vitesse: (" .. math.floor(self.player.vx) .. ", " .. math.floor(self.player.vy) .. ")",
+        startX,
+        startY + lineHeight * line
+    )
+    line = line + 1
+
+    -- PV joueur
+    love.graphics.print(
+        "PV joueur: " .. (self.player.hp or 0) .. " / " .. (self.player.maxHp or 0),
+        startX,
+        startY + lineHeight * line
+    )
+    line = line + 1
+
+    -- Cooldown d'invincibilité
+    local hitCD = self.player.hitCooldown or 0
+    love.graphics.print(
+        string.format("Invincibilité: %.2fs", hitCD),
+        startX,
+        startY + lineHeight * line
+    )
+    line = line + 1
+
+    -- Taille fenêtre
+    love.graphics.print(
+        "Taille fenêtre: " .. _G.gameConfig.windowWidth .. "x" .. _G.gameConfig.windowHeight,
+        startX,
+        startY + lineHeight * line
+    )
+    line = line + 1
+
+    -- Echelle
+    love.graphics.print("Echelle: " .. string.format("%.2f", scale), startX, startY + lineHeight * line)
+    line = line + 1
+
+    -- Portes disponibles
     local doorsText = "Portes: "
     if self.currentRoom.doors.top then doorsText = doorsText .. "H " end
     if self.currentRoom.doors.bottom then doorsText = doorsText .. "B " end
     if self.currentRoom.doors.left then doorsText = doorsText .. "G " end
     if self.currentRoom.doors.right then doorsText = doorsText .. "D " end
     if doorsText == "Portes: " then doorsText = doorsText .. "Aucune" end
-    love.graphics.print(doorsText, startX, startY + lineHeight * 6)
+    love.graphics.print(doorsText, startX, startY + lineHeight * line)
+    line = line + 1
 
-    -- Liste des mobs présents
+    -- Liste des mobs
     if self.currentRoom.mobs and #self.currentRoom.mobs > 0 then
         local mobsText = "Mobs: "
         for i, mob in ipairs(self.currentRoom.mobs) do
@@ -243,12 +297,12 @@ function GameState:drawDebugInfo()
                 mobsText = mobsText .. ", "
             end
         end
-        love.graphics.print(mobsText, startX, startY + lineHeight * 7)
+        love.graphics.print(mobsText, startX, startY + lineHeight * line)
     else
-        love.graphics.print("Mobs: Aucun", startX, startY + lineHeight * 7)
+        love.graphics.print("Mobs: Aucun", startX, startY + lineHeight * line)
     end
-
 end
+
 
 function GameState:drawDoors()
     local doorWidth = 60 * _G.gameConfig.scaleX
@@ -418,17 +472,19 @@ function GameState:updateMobs(dt)
             playerY = self.player.y,
             scale = scale,
             doors = self.currentRoom.doors
+            player = self.player,
+            debugMode = self.debugMode
         })
     end
 
-    -- 2) Build absolute positions and radii
+   -- 2) Build absolute positions and radii
     local mobCount = #self.currentRoom.mobs
     local abs = {}
     for i, mob in ipairs(self.currentRoom.mobs) do
         local mx = roomX + mob.relX * roomW
         local my = roomY + mob.relY * roomH
         local mr = (mob.size or 10) * scale
-        abs[i] = {mob = mob, x = mx, y = my, r = mr}
+        abs[i] = {mob = mob, x = mx, y = my, r = mr, underground = (mob.state == "underground")}
     end
 
     -- 3) Resolve mob↔mob collisions (simple push-apart)
@@ -436,6 +492,8 @@ function GameState:updateMobs(dt)
         for j = i+1, mobCount do
             local a = abs[i]
             local b = abs[j]
+            -- Skip si l'un des deux est sous terre
+            if a.underground or b.underground then goto continue_mob end
             local dx = a.x - b.x
             local dy = a.y - b.y
             local dist2 = dx*dx + dy*dy
@@ -446,24 +504,21 @@ function GameState:updateMobs(dt)
                     dx = 0.01; dy = 0.01; dist = math.sqrt(dx*dx + dy*dy)
                 end
                 local overlap = minDist - dist
-                -- Normalized direction from b to a
                 local nx = dx / dist
                 local ny = dy / dist
-                -- Push each by half the overlap
                 local pushAX = nx * (overlap * 0.5)
                 local pushAY = ny * (overlap * 0.5)
                 local pushBX = -nx * (overlap * 0.5)
                 local pushBY = -ny * (overlap * 0.5)
 
-                -- Apply to absolute positions
                 a.x = a.x + pushAX
                 a.y = a.y + pushAY
                 b.x = b.x + pushBX
                 b.y = b.y + pushBY
             end
+            ::continue_mob::
         end
     end
-
     -- 4) Write back adjusted mob rel positions and clamp to room
     for i, info in ipairs(abs) do
         local m = info.mob
@@ -471,8 +526,10 @@ function GameState:updateMobs(dt)
         m.relY = math.max(0, math.min(1, (info.y - roomY) / roomH))
     end
 
-    -- 5) Resolve mob↔player collisions (push player away and keep player inside room)
+    -- 5) Resolve mob<->player collisions (push player away and keep player inside room)
     for _, info in ipairs(abs) do
+        
+        if info.underground then goto continue_player end
         local mx = info.x
         local my = info.y
         local mr = info.r
@@ -509,6 +566,7 @@ function GameState:updateMobs(dt)
             mob.relX = math.max(0, math.min(1, (mx - nx * (overlap * 0.25) - roomX) / roomW))
             mob.relY = math.max(0, math.min(1, (my - ny * (overlap * 0.25) - roomY) / roomH))
         end
+        ::continue_player::
     end
 end
 

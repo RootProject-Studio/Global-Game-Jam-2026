@@ -1,153 +1,261 @@
 local Mob = require("dungeon.mobs.mob")
-local Pigeon = setmetatable({}, {__index = Mob})
+
+local Pigeon = setmetatable({}, { __index = Mob })
 Pigeon.__index = Pigeon
 
 function Pigeon:new(data)
+    data = data or {}
+
     data.category = "normal"
-    data.subtype = "pigeon"
-    data.speed = 60          -- pixels par seconde
-    data.size = 14           -- rayon du Pigeon
+    data.subtype  = "pigeon"
+    data.size     = data.size or 14
+    data.speed    = data.speed or 90
 
     local m = Mob.new(self, data)
-    m.dir = math.random() * 2 * math.pi  -- direction aléatoire
 
-    -- State machine for idle/dash/return
-    m.state = "idle"
-    m.dashTriggerDist = data.dashTriggerDist or 150 -- zone pour déclencher le dash (px)
-    m.dashTime = data.dashTime or 0.35  -- durée du dash
-    m.dashSpeed = data.dashSpeed or 240 -- pixels/s pendant le dash
-    m.returnSpeed = data.returnSpeed or m.speed
-    m.idleDist = data.idleDist or 120   -- distance de maintien autour du joueur (px)
-    m.attackCooldown = data.attackCooldown or 0.5 -- cooldown entre les attaques (s)
-    m.attackTimer = 0
-    m.canAttack = true
+    -- Cercles centrés sur le PLAYER
+    m.attackRadius    = data.attackRadius    or 160 -- déclenche dash
+    m.placementRadius = data.placementRadius or 130 -- distance de repositionnement
+    m.placementTolerance = 12
+    m.orbitSpeed = data.orbitSpeed or 0.6
 
-    -- angle relatif autour du joueur où le pigeon se tient (conserve son angle initial)
-    m.idleAngle = math.atan2((m.relY - 0.5), (m.relX - 0.5))
-    if not m.idleAngle or m.idleAngle == 0 then m.idleAngle = math.random() * 2 * math.pi end
+    -- Dash
+    m.dashSpeed = data.dashSpeed or 300
+    m.dashTime  = data.dashTime  or 0.3
     m.dashTimer = 0
+    m.damage = data.damage or 1
+
+
+    -- Cooldown
+    m.cooldownTime  = data.cooldownTime or 1.5
+    m.cooldownTimer = 0
+
     m.dashDirX = 0
     m.dashDirY = 0
+
+    m.state = "idle" -- idle | dash | cooldown
+
     return m
 end
 
+----------------------------------------------------------------
+-- UPDATE
+----------------------------------------------------------------
 function Pigeon:update(dt, ctx)
-    -- Behaviour: idle (hold position at a distance) -> if player enters dashTriggerDist => dash -> return
     if not ctx.playerX or not ctx.playerY then return end
 
-    -- absolute positions in pixels relative to room origin
+    -- Positions absolues
     local myX = self.relX * ctx.roomWidth
     local myY = self.relY * ctx.roomHeight
+
     local playerX = ctx.playerX - ctx.roomX
     local playerY = ctx.playerY - ctx.roomY
 
-    -- Distance to player
-    local toPlayerX = playerX - myX
-    local toPlayerY = playerY - myY
-    local distToPlayer = math.sqrt(toPlayerX*toPlayerX + toPlayerY*toPlayerY)
+    -- Vecteur PLAYER → PIGEON
+    local dx = myX - playerX
+    local dy = myY - playerY
+    local dist = math.sqrt(dx*dx + dy*dy)
+    if dist == 0 then dist = 0.001 end
 
-    -- Update attack cooldown
-    if not self.canAttack then
-        self.attackTimer = self.attackTimer + dt
-        if self.attackTimer >= self.attackCooldown then
-            self.canAttack = true
-            self.attackTimer = 0
-        end
-    end
-
-    -- compute current anchor position around player using idleAngle
-    local anchorX = playerX + math.cos(self.idleAngle) * self.idleDist
-    local anchorY = playerY + math.sin(self.idleAngle) * self.idleDist
-
+    ------------------------------------------------------------
+    -- IDLE : attendre dans la zone, attaquer si trop proche
+    ------------------------------------------------------------
+    
+    
     if self.state == "idle" then
-        -- move smoothly toward anchor
-        local dx = anchorX - myX
-        local dy = anchorY - myY
-        local dist = math.sqrt(dx*dx + dy*dy)
-        if dist > 0.1 then
-            local step = math.min(self.speed * dt, dist)
-            myX = myX + (dx / dist) * step
-            myY = myY + (dy / dist) * step
-        end
+        -- Si assez proche → attaquer
+        if dist <= self.attackRadius then
+            -- Vecteur normalisé vers le joueur
+            local dirX = (playerX - myX) / dist
+            local dirY = (playerY - myY) / dist
 
-        -- Check if pigeon can attack: either player is in dashTriggerDist OR in direct collision (very close)
-        local canTriggerDash = false
-        if distToPlayer <= self.dashTriggerDist then
-            canTriggerDash = true
-        elseif distToPlayer <= (self.size + 8) then  -- collision range
-            canTriggerDash = true
-        end
+            local dashDistance = dist * 2  -- 50% plus loin
+            self.dashDirX = dirX
+            self.dashDirY = dirY
+            self.dashTargetDistance = dashDistance
 
-        -- If player triggers attack and cooldown is ready, start dash
-        if canTriggerDash and self.canAttack then
-            -- start dash toward player's current position
-            local ddx = (playerX - myX)
-            local ddy = (playerY - myY)
-            local dlen = math.sqrt(ddx*ddx + ddy*ddy)
-            if dlen == 0 then dlen = 0.0001 end
-            self.dashDirX = ddx / dlen
-            self.dashDirY = ddy / dlen
-            self.state = "dash"
             self.dashTimer = 0
-            self.canAttack = false
+            self.state = "dash"
+            goto finalize
         end
 
+        -- Maintien autour du joueur
+        local targetDist = self.placementRadius
+        local tolerance  = self.placementTolerance
+
+        local moveX, moveY = 0, 0
+
+        -- Trop loin → se rapprocher
+        if dist > targetDist + tolerance then
+            moveX = -dx / dist
+            moveY = -dy / dist
+
+        -- Trop proche → s’éloigner
+        elseif dist < targetDist - tolerance then
+            moveX = dx / dist
+            moveY = dy / dist
+
+        -- Bonne distance → orbite
+        else
+            moveX = -dy / dist
+            moveY = dx / dist
+        end
+
+        local speed = self.speed
+        if dist >= targetDist - tolerance and dist <= targetDist + tolerance then
+            speed = speed * self.orbitSpeed
+        end
+
+        myX = myX + moveX * speed * dt
+        myY = myY + moveY * speed * dt
+
+
+    ------------------------------------------------------------
+    -- DASH
+    ------------------------------------------------------------
     elseif self.state == "dash" then
-        -- move fast towards dash direction (ignore walls, just move)
         local move = self.dashSpeed * dt
         myX = myX + self.dashDirX * move
         myY = myY + self.dashDirY * move
+
+        -- Appliquer les dégâts au joueur
+        if ctx.player then
+            local player = ctx.player
+
+            -- Positions absolues du pigeon
+            local absX = ctx.roomX + self.relX * ctx.roomWidth
+            local absY = ctx.roomY + self.relY * ctx.roomHeight
+
+            -- dx/dy vers le joueur
+            local dx = ctx.player.x - absX
+            local dy = ctx.player.y - absY
+
+            local hitRadiusMultiplier = 1
+            local rx = ctx.player.hitboxRadiusX + self.size * hitRadiusMultiplier
+            local ry = ctx.player.hitboxRadiusY + self.size * hitRadiusMultiplier
+            local distanceSquared = (dx*dx)/(rx*rx) + (dy*dy)/(ry*ry)
+
+            if distanceSquared <= 1 then
+                -- Collision détectée
+                if not player.hitCooldown or player.hitCooldown <= 0 then
+                    local damage = self.damage or 1
+                    player.hp = math.max(0, player.hp - damage)
+                    player.hitCooldown = 0.5  -- 1 seconde d'invincibilité
+                end
+            end
+        end
+
         self.dashTimer = self.dashTimer + dt
-
-        -- stop dash after dashTime (or if reached player closely)
-        local pdx = playerX - myX
-        local pdy = playerY - myY
-        if self.dashTimer >= self.dashTime or (pdx*pdx + pdy*pdy) < ( (self.size + 8) * (self.size + 8) ) then
-            self.state = "return"
+        if self.dashTimer >= self.dashTime then
+            self.cooldownTimer = 0
+            self.state = "cooldown"
         end
 
-    elseif self.state == "return" then
-        -- recompute anchor relative to (possibly moved) player and head back
-        anchorX = (ctx.playerX - ctx.roomX) + math.cos(self.idleAngle) * self.idleDist
-        anchorY = (ctx.playerY - ctx.roomY) + math.sin(self.idleAngle) * self.idleDist
 
-        local dx = anchorX - myX
-        local dy = anchorY - myY
-        local dist = math.sqrt(dx*dx + dy*dy)
-        if dist > 0.1 then
-            local step = math.min(self.returnSpeed * dt, dist)
-            myX = myX + (dx / dist) * step
-            myY = myY + (dy / dist) * step
+    ------------------------------------------------------------
+    -- COOLDOWN : se replacer hors du joueur
+    ------------------------------------------------------------
+    elseif self.state == "cooldown" then
+        self.cooldownTimer = self.cooldownTimer + dt
+
+        if dist < 0.001 then goto finalize end
+
+        -- Si cooldown fini et joueur proche → dash
+        if self.cooldownTimer >= self.cooldownTime and dist <= self.attackRadius then
+            local dirX = (playerX - myX) / dist
+            local dirY = (playerY - myY) / dist
+
+            local dashDistance = dist * 1.5
+            self.dashDirX = dirX
+            self.dashDirY = dirY
+            self.dashTargetDistance = dashDistance
+
+            self.dashTimer = 0
+            self.state = "dash"
+            self.cooldownTimer = 0
+            goto finalize
         end
 
-        if dist <= 4 then
+        -- Sinon, s’éloigner si trop proche
+        if dist < self.placementRadius then
+            local fleeX = - (playerX - myX) / dist
+            local fleeY = - (playerY - myY) / dist
+            local move = self.speed * dt
+
+            myX = myX + fleeX * move
+            myY = myY + fleeY * move
+        end
+
+        if self.cooldownTimer >= self.cooldownTime and dist >= self.placementRadius then
             self.state = "idle"
         end
     end
 
-    -- write back relative position and clamp to room
+
+    ::finalize::
+
+    -- Clamp salle
     self.relX = math.max(0, math.min(1, myX / ctx.roomWidth))
     self.relY = math.max(0, math.min(1, myY / ctx.roomHeight))
 end
 
+----------------------------------------------------------------
+-- DRAW
+----------------------------------------------------------------
 function Pigeon:draw(ctx)
-    -- position absolue dans la salle
+    print("DEBUG MODE:", ctx.debugMode)
+    local scale = ctx.scale or 1
     local x = ctx.roomX + self.relX * ctx.roomWidth
     local y = ctx.roomY + self.relY * ctx.roomHeight
 
-    -- Change color based on state
+    -- Couleur du pigeon selon état
     if self.state == "dash" then
-        love.graphics.setColor(1, 0.2, 0.2)  -- red when dashing
+        love.graphics.setColor(1, 0.2, 0.2)
+    elseif self.state == "cooldown" then
+        love.graphics.setColor(1, 0.7, 0.2)
     else
         love.graphics.setColor(0.7, 0.4, 0.8)
     end
-    love.graphics.circle("fill", x, y, self.size * (ctx.scale or 1))
 
-    -- Draw dash trigger zone visualization (if debugging)
-    if ctx.debugMode then
-        love.graphics.setColor(1, 0, 0, 0.2)
-        love.graphics.circle("line", x, y, self.dashTriggerDist)
+    love.graphics.circle("fill", x, y, self.size * scale)
+
+    -- DEBUG : cercles centrés sur le player
+    if ctx.debugMode and ctx.playerX and ctx.playerY then
+        local px, py = ctx.playerX, ctx.playerY
+
+        -- Zone d'attaque
+        love.graphics.setColor(1, 0, 0, 0.25)
+        love.graphics.circle("line", px, py, self.attackRadius)
+
+        -- Zone de placement
+        love.graphics.setColor(0, 1, 0, 0.25)
+        love.graphics.circle("line", px, py, self.placementRadius)
     end
+
+    -- DEBUG : hitbox dash centrée sur le pigeon
+    if ctx.debugMode and self.state == "dash" then
+        love.graphics.setColor(1, 0, 0, 0.3)
+        local hitboxRadius = self.size * 3  -- multiplier pour agrandir
+        love.graphics.circle("line", x, y, hitboxRadius)
+    end
+
+    if ctx.debugMode and ctx.player then
+        local player = ctx.player
+        local px, py = player.x, player.y
+
+        -- Correspond exactement au calcul utilisé pour les dégâts
+        local hitRadiusMultiplier = 1.5  -- même que dans update
+        local rx = player.hitboxRadiusX + self.size * hitRadiusMultiplier
+        local ry = player.hitboxRadiusY + self.size * hitRadiusMultiplier
+
+        love.graphics.setColor(1, 0, 0, 0.3) -- rouge transparent
+        love.graphics.ellipse("line", px, py, rx, ry)
+    end
+
+
+
 end
+
+
 
 return Pigeon

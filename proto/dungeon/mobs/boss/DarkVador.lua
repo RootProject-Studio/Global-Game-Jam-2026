@@ -7,6 +7,7 @@ function DarkVador:new(data)
     data.subtype = "darkvador"
     data.speed = 0
     data.size = 40
+    data.maxHP = data.maxHP or 100  -- PV max
 
     local m = Mob.new(self, data)
 
@@ -24,7 +25,7 @@ function DarkVador:new(data)
     -- Pattern d'attaque
     m.projectiles = {}
     m.state = "moving"     -- moving | attacking
-    m.waveCount = 0
+    m.waveCount = 0 
     m.waveMax = 5
     m.waveCooldown = 0
     m.waveInterval = 2 + math.random() -- 2 à 3 sec
@@ -110,6 +111,9 @@ function DarkVador:update(dt, ctx)
         end
     end
 
+    if ctx.player then
+        self:checkProjectilesCollision(ctx.player, ctx)
+    end
 
 
 
@@ -122,7 +126,7 @@ function DarkVador:launchPattern(barCount)
         local color = math.random() > 0.5 and {1,0,0} or {0,0,1}
         local speed = 0.3
 
-        local proj = {dx=0, dy=0, relX=0, relY=0, size=0.05, color=color, orientation=orientation}
+        local proj = {dx=0, dy=0, relX=0, relY=0, size=0.05, color=color, orientation=orientation, damage=1}
 
         if orientation == 3 then -- haut→bas
             proj.relX = 0
@@ -158,6 +162,56 @@ function DarkVador:launchPattern(barCount)
     end
 end
 
+-- Vérifie si une barre touche le joueur et applique les dégâts
+function DarkVador:checkProjectilesCollision(player, ctx)
+    local isMoving = math.abs(player.vx) > 0.1 or math.abs(player.vy) > 0.1
+
+    for _, bar in ipairs(self.projectiles) do
+        -- Coordonnées absolues de la barre
+        local bx, by, bw, bh = 0, 0, 0, 0
+        if bar.orientation == 1 or bar.orientation == 2 then
+            -- vertical
+            bw = bar.size * ctx.roomWidth
+            bh = ctx.roomHeight
+            bx = ctx.roomX + bar.relX * ctx.roomWidth - bw/2
+            by = ctx.roomY
+        else
+            -- horizontal
+            bw = ctx.roomWidth
+            bh = bar.size * ctx.roomHeight
+            bx = ctx.roomX
+            by = ctx.roomY + bar.relY * ctx.roomHeight - bh/2
+        end
+
+        -- Collision ellipse vs rectangle
+        local px, py = player.x, player.y
+        local rx, ry = player.hitboxRadiusX, player.hitboxRadiusY
+        local closestX = math.max(bx, math.min(px, bx + bw))
+        local closestY = math.max(by, math.min(py, by + bh))
+        local dx = (closestX - px) / rx
+        local dy = (closestY - py) / ry
+
+        if (dx*dx + dy*dy) <= 1 then
+            -- Vérifier couleur et mouvement
+            local canDamage = true
+            if bar.color[1] == 1 and bar.color[2] == 0 and bar.color[3] == 0 then
+                -- barre rouge → pas de dégâts si joueur bouge
+                if isMoving then canDamage = false end
+            elseif bar.color[1] == 0 and bar.color[2] == 0 and bar.color[3] == 1 then
+                -- barre bleue → pas de dégâts si joueur immobile
+                if not isMoving then canDamage = false end
+            end
+
+            -- Appliquer les dégâts si possible et pas sur cooldown
+            if canDamage and (not player.hitCooldown or player.hitCooldown <= 0) then
+                player.hp = math.max(0, player.hp - bar.damage)
+                player.hitCooldown = 1
+            end
+        end
+    end
+end
+
+
 
 -- Dessiner
 function DarkVador:draw(ctx)
@@ -189,6 +243,29 @@ function DarkVador:draw(ctx)
                 p.size * ctx.roomHeight
             )
         end
+    end
+
+    -- Barre de vie du boss
+    if self.maxHP and self.hp then
+        local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+        local margin = 20 * scale
+        local maxWidth = 400 * scale          -- largeur max de la barre
+        local height = 20 * scale
+        local x0 = (_G.gameConfig.windowWidth - maxWidth) / 2  -- centrer horizontalement
+        local y0 = margin
+
+        -- fond rouge
+        love.graphics.setColor(0.5,0,0)
+        love.graphics.rectangle("fill", x0, y0, maxWidth, height)
+
+        -- vie verte proportionnelle
+        love.graphics.setColor(0,1,0)
+        love.graphics.rectangle("fill", x0, y0, maxWidth * (self.hp/self.maxHP), height)
+
+        -- contour noir
+        love.graphics.setColor(0,0,0)
+        love.graphics.setLineWidth(2)
+        love.graphics.rectangle("line", x0, y0, maxWidth, height)
     end
 end
 
