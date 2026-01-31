@@ -25,7 +25,7 @@ function DarkVador:new(data)
     -- Pattern d'attaque
     m.projectiles = {}
     m.state = "moving"     -- moving | attacking
-    m.waveCount = 0
+    m.waveCount = 0 
     m.waveMax = 5
     m.waveCooldown = 0
     m.waveInterval = 2 + math.random() -- 2 à 3 sec
