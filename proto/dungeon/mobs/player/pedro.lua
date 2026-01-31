@@ -183,9 +183,11 @@ function Pedro:checkProjectileCollisions(enemies)
         local proj = self.projectiles[projIdx]
         if not proj.hit then  -- Vérifier si le projectile n'a pas déjà touché
             
-            for mobIdx = #enemies, 1, -1 do
+           for mobIdx = #enemies, 1, -1 do
                 local mob = enemies[mobIdx]
-                if mob and (not mob.isDead or not mob:isDead()) then
+                if not mob then goto continue_mob end
+                if mob.state == "underground" then goto continue_mob end
+                if not mob.isDead or not mob:isDead() then
                     -- Convertir la position relative du mob en pixels absolus
                     local mobX = mob.relX * proj.roomWidth + proj.roomX
                     local mobY = mob.relY * proj.roomHeight + proj.roomY
@@ -268,7 +270,9 @@ function Pedro:checkProjectileCollisions(enemies)
                         end
                     end
                 end
-            end
+                   ::continue_mob:: 
+                 end
+            
         end
     end
 end

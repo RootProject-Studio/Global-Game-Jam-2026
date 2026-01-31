@@ -10,6 +10,7 @@ function Pigeon:new(data)
     data.subtype  = "pigeon"
     data.size     = data.size or 14
     data.speed    = data.speed or 90
+    data.maxHP = data.maxHP or 5  -- PV max
 
     local m = Mob.new(self, data)
 
@@ -203,7 +204,6 @@ end
 -- DRAW
 ----------------------------------------------------------------
 function Pigeon:draw(ctx)
-    print("DEBUG MODE:", ctx.debugMode)
     local scale = ctx.scale or 1
     local x = ctx.roomX + self.relX * ctx.roomWidth
     local y = ctx.roomY + self.relY * ctx.roomHeight
@@ -218,6 +218,19 @@ function Pigeon:draw(ctx)
     end
 
     love.graphics.circle("fill", x, y, self.size * scale)
+
+    -- Barre de vie
+    if self.maxHP > 1 then
+        local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+
+        local barWidth = self.size * scale * 2
+        local barHeight = 3 * scale
+        love.graphics.rectangle("fill", x - barWidth/2, y - self.size*scale - 6, barWidth, barHeight)
+        love.graphics.setColor(0, 1, 0)
+        love.graphics.rectangle("fill", x - barWidth/2, y - self.size*scale - 6, barWidth * (self.hp/self.maxHP), barHeight)
+
+    end
+
 
     -- DEBUG : cercles centrés sur le player
     if ctx.debugMode and ctx.playerX and ctx.playerY then
