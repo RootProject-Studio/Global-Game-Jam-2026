@@ -446,14 +446,14 @@ function GameState:updateMobs(dt)
         })
     end
 
-    -- 2) Build absolute positions and radii
+   -- 2) Build absolute positions and radii
     local mobCount = #self.currentRoom.mobs
     local abs = {}
     for i, mob in ipairs(self.currentRoom.mobs) do
         local mx = roomX + mob.relX * roomW
         local my = roomY + mob.relY * roomH
         local mr = (mob.size or 10) * scale
-        abs[i] = {mob = mob, x = mx, y = my, r = mr}
+        abs[i] = {mob = mob, x = mx, y = my, r = mr, underground = (mob.state == "underground")}
     end
 
     -- 3) Resolve mob↔mob collisions (simple push-apart)
@@ -461,6 +461,8 @@ function GameState:updateMobs(dt)
         for j = i+1, mobCount do
             local a = abs[i]
             local b = abs[j]
+            -- Skip si l'un des deux est sous terre
+            if a.underground or b.underground then goto continue_mob end
             local dx = a.x - b.x
             local dy = a.y - b.y
             local dist2 = dx*dx + dy*dy
@@ -471,24 +473,21 @@ function GameState:updateMobs(dt)
                     dx = 0.01; dy = 0.01; dist = math.sqrt(dx*dx + dy*dy)
                 end
                 local overlap = minDist - dist
-                -- Normalized direction from b to a
                 local nx = dx / dist
                 local ny = dy / dist
-                -- Push each by half the overlap
                 local pushAX = nx * (overlap * 0.5)
                 local pushAY = ny * (overlap * 0.5)
                 local pushBX = -nx * (overlap * 0.5)
                 local pushBY = -ny * (overlap * 0.5)
 
-                -- Apply to absolute positions
                 a.x = a.x + pushAX
                 a.y = a.y + pushAY
                 b.x = b.x + pushBX
                 b.y = b.y + pushBY
             end
+            ::continue_mob::
         end
     end
-
     -- 4) Write back adjusted mob rel positions and clamp to room
     for i, info in ipairs(abs) do
         local m = info.mob
@@ -498,6 +497,8 @@ function GameState:updateMobs(dt)
 
     -- 5) Resolve mob↔player collisions (push player away and keep player inside room)
     for _, info in ipairs(abs) do
+        
+        if info.underground then goto continue_player end
         local mx = info.x
         local my = info.y
         local mr = info.r
@@ -534,6 +535,7 @@ function GameState:updateMobs(dt)
             mob.relX = math.max(0, math.min(1, (mx - nx * (overlap * 0.25) - roomX) / roomW))
             mob.relY = math.max(0, math.min(1, (my - ny * (overlap * 0.25) - roomY) / roomH))
         end
+        ::continue_player::
     end
 end
 

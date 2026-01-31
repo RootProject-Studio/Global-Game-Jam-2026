@@ -11,6 +11,7 @@ factory.normal = {
 factory.boss = {
     guardian = require("dungeon.mobs.boss.DaftPunk"),
     DarkVador = require("dungeon.mobs.boss.DarkVador"),
+    Scarface = require("dungeon.mobs.boss.Scarface"),
 
     --brute    = require("dungeon.mobs.boss.brute"),
 }
