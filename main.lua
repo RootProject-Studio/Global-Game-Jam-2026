@@ -1,6 +1,7 @@
 local GameStateManager = require("gamestate")
 local Transitions = require("transitions")
 local MenuState = require("states.menu")
+local GameState = require("states.game")
 local CreditsState = require("states.credits")
 local OptionsState = require("states.options")
 
@@ -42,7 +43,7 @@ function love.load()
 
     -- Enregistrement des états
     GameStateManager:registerState("menu", MenuState)
-    -- GameStateManager:registerState("game", GameState)
+    GameStateManager:registerState("game", GameState)
     GameStateManager:registerState("options", OptionsState)
     GameStateManager:registerState("credits", CreditsState)
 

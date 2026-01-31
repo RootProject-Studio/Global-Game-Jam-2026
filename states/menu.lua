@@ -9,8 +9,8 @@ local MenuState = {
 function MenuState:enter()
     self.buttons = {
         {x = 0, y = 0, width = 200, height = 50, label = "Jouer", action = function() 
-            Transitions:start("fade", 0.5)
-            -- Vous pouvez changer d'état après
+            Transitions:start("slideUp", 0.5)
+            GameStateManager:setState("game")
         end},
         {x = 0, y = 0, width = 200, height = 50, label = "Options", action = function() 
             Transitions:start("slideLeft", 0.3)
@@ -91,6 +91,8 @@ function MenuState:keypressed(key)
         end
     elseif key == "return" or key == "space" then
         self.buttons[self.selectedButton].action()
+    elseif key == "escape" then
+        love.event.quit()
     end
 end
 

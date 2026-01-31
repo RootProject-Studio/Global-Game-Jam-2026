@@ -18,17 +18,31 @@ function GameState:enter()
     self.player:equipMask(cyclope)
 
     -- Générer un nouveau donjon
+    if not DungeonGenerator then
+        io.stderr:write("ERREUR: DungeonGenerator non trouvé!\n")
+        self.currentRoom = nil
+        self.dungeon = {}
+        self:updateLayout()
+        return
+    end
+    
     self.generator = DungeonGenerator:new()
     self.dungeon = self.generator:generate()
     self.generator:populateRooms()
     
     -- Trouver la salle de départ
     self.currentRoom = nil
-    for _, room in ipairs(self.dungeon) do
-        if room.type == DungeonGenerator.ROOM_TYPES.START then
-            self.currentRoom = room
-            break
+    if self.dungeon then
+        for _, room in ipairs(self.dungeon) do
+            if room.type == DungeonGenerator.ROOM_TYPES.START then
+                self.currentRoom = room
+                break
+            end
         end
+    end
+    
+    if not self.currentRoom then
+        io.stderr:write("ERREUR: Salle de départ non trouvée!\n")
     end
     
     -- Valeurs de base (résolution 800x600)
@@ -157,6 +171,13 @@ end
 
 function GameState:draw()
     love.graphics.clear(0.15, 0.1, 0.1)
+    
+    -- Vérifier que la salle existe
+    if not self.currentRoom then
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf("Erreur: Salle non chargée!", 0, _G.gameConfig.windowHeight / 2 - 50, _G.gameConfig.windowWidth, "center")
+        return
+    end
     
     -- Dessiner la salle actuelle
     love.graphics.setColor(0.2, 0.2, 0.25)
