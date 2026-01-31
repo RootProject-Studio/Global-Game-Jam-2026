@@ -6,12 +6,14 @@ local GameStateManager = require("gamestate")
 local DungeonGenerator = require("dungeon.generator")
 local Pedro            = require("dungeon.mobs.player.pedro")
 local Cyclope          = require("dungeon.masks.cyclope")
+local Ffp2 = require("dungeon.masks.ffp2")
 
 function GameState:enter()
 
     self.player = Pedro:new()
     local cyclope = Cyclope:new()
-    self.player:equipMask(cyclope)
+    local ffp2 = Ffp2:new()
+    self.player:equipMask(ffp2)
 
     -- Générer un nouveau donjon
     self.generator = DungeonGenerator:new()
