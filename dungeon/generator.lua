@@ -374,7 +374,9 @@ function DungeonGenerator:canPlaceRoomForced(x, y)
 end
 
 
-function DungeonGenerator:populateRooms()
+function DungeonGenerator:populateRooms(defeatedBosses)
+    defeatedBosses = defeatedBosses or {}
+    
     for _, room in ipairs(self.rooms) do
         room.mobs = {}
 
@@ -387,10 +389,8 @@ function DungeonGenerator:populateRooms()
         if room.type == self.ROOM_TYPES.NORMAL then
             local mobCount = math.random(1, 3)
 
-
             for i = 1, mobCount do
                 local subtype = self.NORMAL_MOBS[math.random(#self.NORMAL_MOBS)]
-
 
                 table.insert(room.mobs,
                     MobFactory.create("normal", subtype, {
@@ -401,11 +401,34 @@ function DungeonGenerator:populateRooms()
             end
         end
 
-        -- SALLE DE BOSS → UN boss
+        -- SALLE DE BOSS → UN boss pas encore battu
         if room.type == self.ROOM_TYPES.BOSS then
-
-            local subtype = self.BOSS_MOBS[math.random(#self.BOSS_MOBS)]
-
+            -- Filtrer les boss non encore battus
+            local availableBosses = {}
+            for _, bossType in ipairs(self.BOSS_MOBS) do
+                local alreadyDefeated = false
+                for _, defeated in ipairs(defeatedBosses) do
+                    if defeated == bossType then
+                        alreadyDefeated = true
+                        break
+                    end
+                end
+                if not alreadyDefeated then
+                    table.insert(availableBosses, bossType)
+                end
+            end
+            
+            -- Si tous les boss ont été battus, recommencer le cycle
+            if #availableBosses == 0 then
+                availableBosses = {}
+                for _, bossType in ipairs(self.BOSS_MOBS) do
+                    table.insert(availableBosses, bossType)
+                end
+            end
+            
+            -- Choisir un boss aléatoire parmi ceux disponibles
+            local subtype = availableBosses[math.random(#availableBosses)]
+            room.bossType = subtype  -- IMPORTANT: Sauvegarder le type de boss
 
             table.insert(room.mobs,
                 MobFactory.create("boss", subtype, {

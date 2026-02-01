@@ -16,11 +16,13 @@ local Hydre = require("dungeon.masks.hydre")
 local Magrit = require("dungeon.masks.magrit")
 local Anonymous =require("dungeon.masks.anonymous")
 local Luchador =require("dungeon.masks.luchador")
+local Fire = require("dungeon.masks.fire")
+local Medic =require("dungeon.masks.medic")
 function GameState:enter()
     -- Jouer la musique du jeu avec transition fluide
-    -- Si une musique joue (du menu), elle fera un fondu vers la nouvelle
     AudioManager:fadeInMusic("music/a_boss.ogg", 1.0, 0.5)
 
+    -- Initialisation du joueur (une seule fois)
     self.player = Pedro:new()
     local cyclope = Cyclope:new()
     local ffp2 = Ffp2:new()
@@ -32,36 +34,15 @@ function GameState:enter()
     local magrit = Magrit:new()
     local anonymous = Anonymous:new()
     local luchador = Luchador:new()
-    self.player:equipMask(ffp2,1)
+    local fire = Fire:new()
+    local medic = Medic:new()
+    self.player:equipMask(scream)
 
+    self.items = {}
 
-    -- Générer un nouveau donjon
-    if not DungeonGenerator then
-        io.stderr:write("ERREUR: DungeonGenerator non trouvé!\n")
-        self.currentRoom = nil
-        self.dungeon = {}
-        self:updateLayout()
-        return
-    end
-    
-    self.generator = DungeonGenerator:new()
-    self.dungeon = self.generator:generate()
-    self.generator:populateRooms()
-    
-    -- Trouver la salle de départ
-    self.currentRoom = nil
-    if self.dungeon then
-        for _, room in ipairs(self.dungeon) do
-            if room.type == DungeonGenerator.ROOM_TYPES.START then
-                self.currentRoom = room
-                break
-            end
-        end
-    end
-    
-    if not self.currentRoom then
-        io.stderr:write("ERREUR: Salle de départ non trouvée!\n")
-    end
+    -- Système de niveaux (persistant)
+    self.currentLevel = 1
+    self.defeatedBosses = {}
     
     -- Valeurs de base (résolution 800x600)
     self.baseWidth = 800
@@ -84,7 +65,52 @@ function GameState:enter()
     -- Mode debugging
     self.debugMode = false
     
+    -- Générer le premier donjon
+    self:generateNewLevel()
+    
     self:updateLayout()
+end
+
+function GameState:generateNewLevel()
+    -- Générer un nouveau donjon (appelé à chaque niveau)
+    if not DungeonGenerator then
+        io.stderr:write("ERREUR: DungeonGenerator non trouvé!\n")
+        self.currentRoom = nil
+        self.dungeon = {}
+        return
+    end
+    
+    self.generator = DungeonGenerator:new()
+    self.dungeon = self.generator:generate()
+    self.generator:populateRooms(self.defeatedBosses)
+    
+    -- Trouver la salle de départ
+    self.currentRoom = nil
+    if self.dungeon then
+        for _, room in ipairs(self.dungeon) do
+            if room.type == DungeonGenerator.ROOM_TYPES.START then
+                self.currentRoom = room
+                break
+            end
+        end
+    end
+    
+    if not self.currentRoom then
+        io.stderr:write("ERREUR: Salle de départ non trouvée!\n")
+    end
+    
+    -- Réinitialiser la position du joueur au centre de la salle de départ
+    local scale = math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+    local roomWidth = self.baseRoomWidth * scale
+    local roomHeight = self.baseRoomHeight * scale
+    local roomX = (_G.gameConfig.windowWidth - roomWidth) / 2
+    local roomY = (_G.gameConfig.windowHeight - roomHeight) / 2
+    
+    self.player.x = roomX + roomWidth / 2
+    self.player.y = roomY + roomHeight / 2
+    
+    -- Nettoyer les projectiles
+    self.player.projectiles = {}
 end
 
 function GameState:updateLayout()
@@ -143,6 +169,51 @@ function GameState:update(dt)
     local playerX = self.player.x
     local playerY = self.player.y
     
+
+    local roomCleared = true
+    if self.currentRoom.mobs and #self.currentRoom.mobs > 0 then
+        roomCleared = false
+    end
+
+    -- Vérifier si le boss est vaincu et créer la porte de niveau
+    if self.currentRoom.type == DungeonGenerator.ROOM_TYPES.BOSS then
+        -- Activer la porte de niveau si le boss est vaincu
+        if roomCleared and not self.currentRoom.levelDoorActive then
+            self.currentRoom.levelDoorActive = true
+            
+            -- Sauvegarder le boss vaincu
+            if self.currentRoom.bossType then
+                local alreadySaved = false
+                for _, defeatedBoss in ipairs(self.defeatedBosses) do
+                    if defeatedBoss == self.currentRoom.bossType then
+                        alreadySaved = true
+                        break
+                    end
+                end
+                if not alreadySaved then
+                    table.insert(self.defeatedBosses, self.currentRoom.bossType)
+                end
+            end
+        end
+        
+        -- Vérifier collision avec la porte de niveau
+        if self.currentRoom.levelDoorActive then
+            local doorX = self.roomX + self.roomWidth / 2
+            local doorY = self.roomY + self.roomHeight - 40
+            local doorWidth = 80
+            local doorHeight = 40
+            
+            if playerX > doorX - doorWidth/2 and playerX < doorX + doorWidth/2 and
+               playerY > doorY and playerY < doorY + doorHeight then
+                -- Passer au niveau suivant
+                self.currentLevel = self.currentLevel + 1
+                self:generateNewLevel()
+                return
+            end
+        end
+    end
+
+
     -- Porte du haut
     if self.currentRoom.doors.top and playerY < self.roomY + doorThreshold then
         local centerX = self.roomX + self.roomWidth / 2
@@ -435,6 +506,28 @@ function GameState:drawDoors()
         love.graphics.setColor(0.5, 0.4, 0.3)
         love.graphics.rectangle("line", self.roomX, centerRoomY - doorWidth/2, doorHeight, doorWidth)
     end
+
+      -- Porte de niveau (après boss)
+    if self.currentRoom.type == DungeonGenerator.ROOM_TYPES.BOSS and self.currentRoom.levelDoorActive then
+        local doorX = self.roomX + self.roomWidth / 2
+        local doorY = self.roomY + self.roomHeight - 40
+        local doorWidth = 80
+        local doorHeight = 40
+        
+        -- Porte dorée qui pulse
+        local pulse = 0.7 + 0.3 * math.sin(love.timer.getTime() * 3)
+        
+        -- Fond doré
+        love.graphics.setColor(1, 0.8, 0, 0.8 * pulse)
+        love.graphics.rectangle("fill", doorX - doorWidth/2, doorY, doorWidth, doorHeight, 5, 5)
+        
+        -- Contour brillant
+        love.graphics.setColor(1, 1, 0.5, pulse)
+        love.graphics.setLineWidth(4)
+        love.graphics.rectangle("line", doorX - doorWidth/2, doorY, doorWidth, doorHeight, 5, 5)
+        
+    end
+
 end
 
 function GameState:drawMiniMap()
