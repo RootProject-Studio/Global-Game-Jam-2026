@@ -8,6 +8,7 @@ local Pedro            = require("dungeon.mobs.player.pedro")
 local Cyclope          = require("dungeon.masks.cyclope")
 local Ffp2 = require("dungeon.masks.ffp2")
 local Scream           = require("dungeon.masks.scream")
+local AudioManager     = require("audio_manager")
 local Anubis = require("dungeon.masks.anubis")
 local Plague = require("dungeon.masks.plague_doctor")
 local Paladin = require("dungeon.masks.paladin")
@@ -17,11 +18,17 @@ local Anonymous =require("dungeon.masks.anonymous")
 local Luchador =require("dungeon.masks.luchador")
 
 function GameState:enter()
+    -- Jouer la musique du jeu avec transition fluide
+    -- Si une musique joue (du menu), elle fera un fondu vers la nouvelle
+    AudioManager:fadeInMusic("music/a_boss.ogg", 1.0, 0.5)
 
     self.player = Pedro:new()
     local cyclope = Cyclope:new()
     local ffp2 = Ffp2:new()
     local scream = Scream:new()
+    self.player:equipMask(cyclope)
+
+    self.items = {}
     local anubis = Anubis:new()
     local plague = Plague:new()
     local paladin = Paladin:new()
@@ -32,17 +39,31 @@ function GameState:enter()
     self.player:equipMask(luchador)
 
     -- Générer un nouveau donjon
+    if not DungeonGenerator then
+        io.stderr:write("ERREUR: DungeonGenerator non trouvé!\n")
+        self.currentRoom = nil
+        self.dungeon = {}
+        self:updateLayout()
+        return
+    end
+    
     self.generator = DungeonGenerator:new()
     self.dungeon = self.generator:generate()
     self.generator:populateRooms()
     
     -- Trouver la salle de départ
     self.currentRoom = nil
-    for _, room in ipairs(self.dungeon) do
-        if room.type == DungeonGenerator.ROOM_TYPES.START then
-            self.currentRoom = room
-            break
+    if self.dungeon then
+        for _, room in ipairs(self.dungeon) do
+            if room.type == DungeonGenerator.ROOM_TYPES.START then
+                self.currentRoom = room
+                break
+            end
         end
+    end
+    
+    if not self.currentRoom then
+        io.stderr:write("ERREUR: Salle de départ non trouvée!\n")
     end
     
     -- Valeurs de base (résolution 800x600)
@@ -177,10 +198,34 @@ function GameState:update(dt)
 
     -- Update des mobs
     self:updateMobs(dt)
+
+    -- Update items
+    for _, item in ipairs(self.items) do
+        item:update(dt)
+    end
+
+    -- Collision item<->player
+    self:checkItemCollisions()
+
+    -- Remove collected items
+    local i = #self.items
+    while i >= 1 do
+        if self.items[i]:isDead() then
+            table.remove(self.items, i)
+        end
+        i = i - 1
+    end
 end
 
 function GameState:draw()
     love.graphics.clear(0.15, 0.1, 0.1)
+    
+    -- Vérifier que la salle existe
+    if not self.currentRoom then
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf("Erreur: Salle non chargée!", 0, _G.gameConfig.windowHeight / 2 - 50, _G.gameConfig.windowWidth, "center")
+        return
+    end
     
     -- Dessiner la salle actuelle
     love.graphics.setColor(0.2, 0.2, 0.25)
@@ -205,6 +250,16 @@ function GameState:draw()
                 debugMode = self.debugMode
             })
         end
+    end
+
+    for _, item in ipairs(self.items) do
+        item:draw({
+            roomX = self.roomX,
+            roomY = self.roomY,
+            roomWidth = self.roomWidth,
+            roomHeight = self.roomHeight,
+            scale = _G.gameConfig.scaleX or 1
+        })
     end
 
     
@@ -472,6 +527,8 @@ function GameState:keypressed(key)
 end
 
 function GameState:exit()
+    -- Revenir à la musique du menu avec transition fluide
+    AudioManager:fadeInMusic("music/menu.ogg", 0.5, 0.5)
 end
 
 -- Gestion du redimensionnement
@@ -510,6 +567,20 @@ function GameState:updateMobs(dt)
         if mob:isDead() then
             table.remove(self.currentRoom.mobs, i)
         end
+    end
+
+    -- 2) Remove dead mobs from the room
+    local i = #self.currentRoom.mobs
+    while i >= 1 do
+        if self.currentRoom.mobs[i]:isDead() then
+            -- Récupérer l'item droppé avant de supprimer le mob
+            local droppedItem = self.currentRoom.mobs[i]:onDeath()
+            if droppedItem then
+                table.insert(self.items, droppedItem)
+            end
+            table.remove(self.currentRoom.mobs, i)
+        end
+        i = i - 1
     end
 
    -- 2) Build absolute positions and radii
@@ -605,6 +676,49 @@ function GameState:updateMobs(dt)
     end
 end
 
+function GameState:checkItemCollisions()
+    if not self.player or #self.items == 0 then return end
+    
+    local scale = _G.gameConfig.scaleX or 1
+    local playerRadius = self.player.size or 8
+    
+    for _, item in ipairs(self.items) do
+        local itemPos = item:getAbsolutePos({
+            roomX = self.roomX,
+            roomY = self.roomY,
+            roomWidth = self.roomWidth,
+            roomHeight = self.roomHeight,
+            scale = scale
+        })
+        
+        local dx = self.player.x - itemPos.x
+        local dy = self.player.y - itemPos.y
+        local dist = math.sqrt(dx*dx + dy*dy)
+        local minDist = playerRadius + itemPos.r
+        
+        if dist < minDist then
+            -- Collision! Équiper le masque
+            self:equipMaskFromItem(item.maskType)
+            item:collect()
+        end
+    end
+end
 
+function GameState:equipMaskFromItem(maskType)
+    local Cyclope = require("dungeon.masks.cyclope")
+    local Ffp2 = require("dungeon.masks.ffp2")
+    local Scream = require("dungeon.masks.scream")
+    
+    local maskClass = {
+        cyclope = Cyclope,
+        ffp2 = Ffp2,
+        scream = Scream
+    }
+    
+    if maskClass[maskType] then
+        local newMask = maskClass[maskType]:new()
+        self.player:equipMask(newMask)
+    end
+end
 
 return GameState

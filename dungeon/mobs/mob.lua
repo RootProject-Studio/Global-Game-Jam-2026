@@ -19,6 +19,9 @@ function Mob:new(data)
     m.maxHP = data.maxHP or 1        -- par défaut 1
     m.hp = m.maxHP
 
+    m.dropChance = data.dropChance or 0.3
+    self.droppedItem = nil
+
     return m
 end
 
@@ -34,6 +37,22 @@ end
 function Mob:isDead()
     return self.hp <= 0
 end
+
+-- Appeler cette fonction quand le mob meurt
+function Mob:onDeath()
+    -- Chance de drop
+    if math.random() < self.dropChance then
+        local masks = {"cyclope", "ffp2", "scream"}
+        local randomMask = masks[math.random(#masks)]
+        
+        -- Créer l'item au centre du mob
+        local MaskItem = require("dungeon.masks.maskItem")
+        self.droppedItem = MaskItem:new(randomMask, self.relX, self.relY)
+        return self.droppedItem
+    end
+    return nil
+end
+
 
 function Mob:draw(ctx)
     local x = ctx.roomX + self.relX * ctx.roomWidth

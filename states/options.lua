@@ -69,6 +69,8 @@ function OptionsState:draw()
     -- Titre
     love.graphics.setColor(1, 1, 1)
     love.graphics.printf("OPTIONS", 0, 50 * scale, _G.gameConfig.windowWidth, "center")
+
+    love.graphics.printf("TODO, gestion son, controle", 0, 100 * scale, _G.gameConfig.windowHeight, "center")
     
     -- Boutons
     for i, button in ipairs(self.buttons) do

@@ -1,130 +1,117 @@
--- states/menu.lua
--- État du menu principal
-
-local MenuState = {}
+local Transitions = require("transitions")
 local GameStateManager = require("gamestate")
+local AudioManager = require("audio_manager")
+
+local MenuState = {
+    buttons = {},
+    selectedButton = 1
+}
 
 function MenuState:enter()
-    self.baseButtons = {
-        {
-            text = "Jouer",
-            baseX = 300,
-            baseY = 200,
-            baseWidth = 200,
-            baseHeight = 60,
-            action = function()
-                GameStateManager:setState("game")
-            end
-        },
-        {
-            text = "Options",
-            baseX = 300,
-            baseY = 280,
-            baseWidth = 200,
-            baseHeight = 60,
-            action = function()
-                GameStateManager:setState("options")
-            end
-        },
-        {
-            text = "Crédits",
-            baseX = 300,
-            baseY = 360,
-            baseWidth = 200,
-            baseHeight = 60,
-            action = function()
-                GameStateManager:setState("credits")
-            end
-        }
-    }
+    -- Jouer la musique du menu
+    if not AudioManager:isMusicPlaying() then
+        AudioManager:fadeInMusic("music/menu.ogg", 1.0, 0.5)
+    end
     
-    self.hoveredButton = nil
+    self.buttons = {
+        {x = 0, y = 0, width = 200, height = 50, label = "Jouer", action = function() 
+            Transitions:start("slideUp", 0.5)
+            GameStateManager:setState("game")
+        end},
+        {x = 0, y = 0, width = 200, height = 50, label = "Options", action = function() 
+            Transitions:start("slideLeft", 0.3)
+            GameStateManager:setState("options")
+        end},
+        {x = 0, y = 0, width = 200, height = 50, label = "Crédits", action = function() 
+            Transitions:start("slideLeft", 0.3)
+            GameStateManager:setState("credits")
+        end},
+        {x = 0, y = 0, width = 200, height = 50, label = "Quitter", action = function() 
+            Transitions:start("fade", 0.5)
+            love.event.quit()
+        end}
+    }
     self:updateButtonPositions()
 end
 
 function MenuState:updateButtonPositions()
-    self.buttons = {}
-    local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+    local scale = _G.gameConfig.scale
+    local windowWidth = _G.gameConfig.windowWidth
+    local windowHeight = _G.gameConfig.windowHeight
     
-    -- Dimensions de base du conteneur des boutons
-    local containerWidth = 200 * scale
-    local containerHeight = 60 * scale * 3 + 30 * scale -- 3 boutons + espaces
+    local buttonWidth = 200 * scale
+    local buttonHeight = 50 * scale
+    local spacing = 20 * scale
     
-    -- Centrer le conteneur
-    local containerX = (_G.gameConfig.windowWidth - containerWidth) / 2
-    local containerY = (_G.gameConfig.windowHeight - containerHeight) / 2 + 50 * scale -- Légèrement plus bas pour le titre
+    local totalHeight = #self.buttons * buttonHeight + (#self.buttons - 1) * spacing
+    local startY = (windowHeight - totalHeight) / 2
     
-    for i, baseButton in ipairs(self.baseButtons) do
-        self.buttons[i] = {
-            text = baseButton.text,
-            x = containerX,
-            y = containerY + (i - 1) * (baseButton.baseHeight * scale + 20 * scale),
-            width = containerWidth,
-            height = baseButton.baseHeight * scale,
-            action = baseButton.action
-        }
+    for i, button in ipairs(self.buttons) do
+        button.width = buttonWidth
+        button.height = buttonHeight
+        button.x = (windowWidth - buttonWidth) / 2
+        button.y = startY + (i - 1) * (buttonHeight + spacing)
     end
 end
 
 function MenuState:update(dt)
-    local mx, my = love.mouse.getPosition()
-    self.hoveredButton = nil
-    
-    for i, button in ipairs(self.buttons) do
-        if mx >= button.x and mx <= button.x + button.width and
-           my >= button.y and my <= button.y + button.height then
-            self.hoveredButton = i
-        end
-    end
 end
 
 function MenuState:draw()
-    -- Fond
-    love.graphics.clear(0.1, 0.1, 0.15)
+    love.graphics.clear(0.1, 0.1, 0.1)
     
-    local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+    local scale = _G.gameConfig.scale
+    local windowWidth = _G.gameConfig.windowWidth
     
     -- Titre
     love.graphics.setColor(1, 1, 1)
-    love.graphics.printf("THE BINDING OF ISAAC", 0, 80 * scale, _G.gameConfig.windowWidth, "center")
-    love.graphics.printf("Clone", 0, 120 * scale, _G.gameConfig.windowWidth, "center")
+    love.graphics.setFont(love.graphics.newFont(48 * scale))
+    love.graphics.printf("La Vengeance de Pedro", 0, 50 * scale, windowWidth, "center")
     
     -- Boutons
     for i, button in ipairs(self.buttons) do
-        if self.hoveredButton == i then
-            love.graphics.setColor(0.8, 0.3, 0.3)
+        if i == self.selectedButton then
+            love.graphics.setColor(0.3, 0.5, 0.8)
         else
-            love.graphics.setColor(0.3, 0.3, 0.35)
+            love.graphics.setColor(0.2, 0.2, 0.2)
         end
         
-        love.graphics.rectangle("fill", button.x, button.y, button.width, button.height, 10, 10)
+        love.graphics.rectangle("fill", button.x, button.y, button.width, button.height)
         
-        -- Bordure
-        love.graphics.setColor(0.6, 0.6, 0.65)
-        love.graphics.rectangle("line", button.x, button.y, button.width, button.height, 10, 10)
-        
-        -- Texte
         love.graphics.setColor(1, 1, 1)
-        love.graphics.printf(button.text, button.x, button.y + 20 * scale, button.width, "center")
-    end
-end
-
-function MenuState:mousepressed(x, y, button)
-    if button == 1 and self.hoveredButton then
-        self.buttons[self.hoveredButton].action()
+        love.graphics.setFont(love.graphics.newFont(24 * scale))
+        love.graphics.printf(button.label, button.x, button.y + button.height / 4, button.width, "center")
     end
 end
 
 function MenuState:keypressed(key)
-    if key == "escape" then
+    if key == "up" or key == "z" then
+        self.selectedButton = self.selectedButton - 1
+        if self.selectedButton < 1 then
+            self.selectedButton = #self.buttons
+        end
+    elseif key == "down" or key == "s" then
+        self.selectedButton = self.selectedButton + 1
+        if self.selectedButton > #self.buttons then
+            self.selectedButton = 1
+        end
+    elseif key == "return" or key == "space" then
+        self.buttons[self.selectedButton].action()
+    elseif key == "escape" then
         love.event.quit()
     end
 end
 
-function MenuState:exit()
+function MenuState:mousepressed(x, y, button)
+    for i, btn in ipairs(self.buttons) do
+        if x >= btn.x and x <= btn.x + btn.width and
+           y >= btn.y and y <= btn.y + btn.height then
+            btn.action()
+            break
+        end
+    end
 end
 
--- Appeler cette fonction lors du redimensionnement
 function MenuState:onResize()
     self:updateButtonPositions()
 end
