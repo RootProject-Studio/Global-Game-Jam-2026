@@ -254,8 +254,8 @@ function DarkVador:draw(ctx)
         local img = self.image[self.currentFrame]
         local imgWidth = img:getWidth()
         local imgHeight = img:getHeight()
-        local scaleX = (self.size * 5) / imgWidth
-        local scaleY = (self.size * 5) / imgHeight
+        local scaleX = (self.size * 3) / imgWidth
+        local scaleY = (self.size * 3 ) / imgHeight
         love.graphics.draw(img, x, y, 0, scaleX, scaleY, imgWidth/2, imgHeight/2)
     end
 
