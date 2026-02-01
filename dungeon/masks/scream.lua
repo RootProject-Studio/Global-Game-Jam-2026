@@ -3,15 +3,16 @@ local ConfigLoader = require("dungeon.masks.config_loader")
 local Scream = setmetatable({}, {__index = Mask})
 Scream.__index = Scream
 
+-- Charger l'image du couteau une seule fois
+local knifeImage = love.graphics.newImage("dungeon/masks/assets/couteau.png")
+
 function Scream:new()
     local obj = setmetatable({}, self)
-
     local config = ConfigLoader.getMaskConfig("Scream")
 
     obj.name = config.name
-    obj.attackType = config.attackType -- La distance sera très courte
+    obj.attackType = config.attackType
     obj.damage = config.damage
-
     obj.rayLength = config.rayLength
     obj.rayWidth = config.rayWidth
     obj.shootCooldown = config.shootCooldown
@@ -29,32 +30,31 @@ function Scream:update(dt, player)
     end
 end
 
-function Scream:draw(ctx)
-    love.graphics.setColor(1, 0.2, 0.2)
-    love.graphics.circle("fill", x, y, self.size * (ctx.scale or 1))
+function Scream:draw(ctx, player)
+    if not player.projectiles then return end
+
+    for _, proj in ipairs(player.projectiles) do
+        if proj.type == "couteau" and proj.image then
+            local angle = math.atan2(proj.dirY, proj.dirX)
+            local scale = proj.maxDistance / math.max(proj.image:getWidth(), proj.image:getHeight())  -- optionnel
+            love.graphics.setColor(1,1,1)
+            love.graphics.draw(proj.image, proj.x, proj.y, angle, 1, 1, proj.image:getWidth()/2, proj.image:getHeight()/2)
+        end
+    end
 end
 
 function Scream:onEquip(player)
-    if not player.projectiles then
-        player.projectiles = {}
-    end
-    if not player.equippedMask then
-        player.equippedMask = self
-    end
+    if not player.projectiles then player.projectiles = {} end
+    if not player.equippedMask then player.equippedMask = self end
 end
 
 function Scream:onUnequip(player)
-    -- Nettoyer les projectiles si on déséquipe
-    if player.projectiles then
-        player.projectiles = {}
-    end
+    if player.projectiles then player.projectiles = {} end
 end
 
 function Scream:canShoot()
-    -- Vérifier si on peut tirer
     return self.shootTimer <= 0
 end
-
 
 function Scream:shoot(player, dirX, dirY, roomContext)
     if not self:canShoot() then return false end
@@ -64,21 +64,29 @@ function Scream:shoot(player, dirX, dirY, roomContext)
     local eyeX = player.x + dirX * eyeOffsetDistance
     local eyeY = player.y + dirY * eyeOffsetDistance
 
-    -- Pour un tir corps à corps : distance courte mais adaptable à la salle
-    local baseDistance = 50  -- distance de base du petit coup
+    -- Distance courte corps à corps, adaptée à la salle
+    local baseDistance = 50
     local scaleFactor = math.min(roomContext.roomWidth, roomContext.roomHeight) / 800
-    local maxDistance = baseDistance * scaleFactor  -- plus grande salle → petit peu plus loin
+    local maxDistance = baseDistance * scaleFactor
+
+    -- Charger l'image du projectile (couteau)
+    local knifeImage = love.graphics.newImage("dungeon/masks/assets/couteau.png")
+    local knifeWidth = knifeImage:getWidth()
+    local knifeHeight = knifeImage:getHeight()
 
     local proj = {
         x = eyeX,
         y = eyeY,
         dirX = dirX,
         dirY = dirY,
-        speed = 300,           -- vitesse faible, juste pour “atteindre le voisin”
+        speed = 300,
         distance = 0,
         maxDistance = maxDistance,
         radius = self.rayWidth,
         damage = 10 + self.damage,
+        image = knifeImage,
+        imageWidth = knifeWidth,
+        imageHeight = knifeHeight,
         roomX = roomContext.roomX,
         roomY = roomContext.roomY,
         roomWidth = roomContext.roomWidth,
@@ -88,8 +96,10 @@ function Scream:shoot(player, dirX, dirY, roomContext)
         player = player
     }
 
+    -- Ajouter le projectile au joueur
     player:addProjectile(proj)
 
+    -- Reset cooldown et rayon actif
     self.shootTimer = self.shootCooldown
     self.rayActive = true
     self.rayTimer = self.rayDuration
@@ -98,8 +108,7 @@ function Scream:shoot(player, dirX, dirY, roomContext)
 end
 
 
-function Scream:effect()
-end
+function Scream:effect() end
 
 function Scream:getInfo()
     return {
@@ -111,12 +120,9 @@ function Scream:getInfo()
         shootCooldown = self.shootCooldown,
         rayDuration = self.rayDuration,
         rayActive = self.rayActive,
-
-        imagePath = "dungeon/masks/assets/scream.png",  -- chemin vers l'image du masque
-        description = "Un masque qui te permet de donner des petit coup de couteau droit dans tes ennemis." -- courte description
-
+        imagePath = "dungeon/masks/assets/scream.png",
+        description = "Un masque qui te permet de donner des petit coup de couteau droit dans tes ennemis."
     }
 end
-
 
 return Scream
