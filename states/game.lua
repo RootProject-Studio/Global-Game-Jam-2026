@@ -9,7 +9,13 @@ local Cyclope          = require("dungeon.masks.cyclope")
 local Ffp2 = require("dungeon.masks.ffp2")
 local Scream           = require("dungeon.masks.scream")
 local AudioManager     = require("audio_manager")
-
+local Anubis = require("dungeon.masks.anubis")
+local Plague = require("dungeon.masks.plague_doctor")
+local Paladin = require("dungeon.masks.paladin")
+local Hydre = require("dungeon.masks.hydre")
+local Magrit = require("dungeon.masks.magrit")
+local Anonymous =require("dungeon.masks.anonymous")
+local Luchador =require("dungeon.masks.luchador")
 function GameState:enter()
     -- Jouer la musique du jeu avec transition fluide
     -- Si une musique joue (du menu), elle fera un fondu vers la nouvelle
@@ -19,7 +25,14 @@ function GameState:enter()
     local cyclope = Cyclope:new()
     local ffp2 = Ffp2:new()
     local scream = Scream:new()
-    self.player:equipMask(cyclope)
+    local anubis = Anubis:new()
+    local plague = Plague:new()
+    local paladin = Paladin:new()
+    local hydre = Hydre:new()
+    local magrit = Magrit:new()
+    local anonymous = Anonymous:new()
+    local luchador = Luchador:new()
+    self.player:equipMask(anubis)
 
     self.items = {}
 
@@ -114,6 +127,10 @@ function GameState:update(dt)
             roomHeight = self.roomHeight
         }
         self.player:update(dt, roomContext)
+         if self.player.hp <= 0 then
+            GameStateManager:setState("menu")
+            return
+        end
     end
     
     -- Vérifier les transitions de salle via les portes
@@ -122,8 +139,14 @@ function GameState:update(dt)
     local playerX = self.player.x
     local playerY = self.player.y
     
+
+    local roomCleared = true
+    if self.currentRoom.mobs and #self.currentRoom.mobs > 0 then
+        roomCleared = false
+    end
+
     -- Porte du haut
-    if self.currentRoom.doors.top and playerY < self.roomY + doorThreshold then
+    if  roomCleared and self.currentRoom.doors.top and playerY < self.roomY + doorThreshold then
         local centerX = self.roomX + self.roomWidth / 2
         if playerX > centerX - doorWidth/2 and playerX < centerX + doorWidth/2 then
             self:changeRoom(0, -1)
@@ -133,7 +156,7 @@ function GameState:update(dt)
     end
     
     -- Porte du bas
-    if self.currentRoom.doors.bottom and playerY > self.roomY + self.roomHeight - doorThreshold then
+    if  roomCleared and self.currentRoom.doors.bottom and playerY > self.roomY + self.roomHeight - doorThreshold then
         local centerX = self.roomX + self.roomWidth / 2
         if playerX > centerX - doorWidth/2 and playerX < centerX + doorWidth/2 then
             self:changeRoom(0, 1)
@@ -143,7 +166,7 @@ function GameState:update(dt)
     end
     
     -- Porte de gauche
-    if self.currentRoom.doors.left and playerX < self.roomX + doorThreshold then
+    if  roomCleared and self.currentRoom.doors.left and playerX < self.roomX + doorThreshold then
         local centerY = self.roomY + self.roomHeight / 2
         if playerY > centerY - doorWidth/2 and playerY < centerY + doorWidth/2 then
             self:changeRoom(-1, 0)
@@ -153,7 +176,7 @@ function GameState:update(dt)
     end
     
     -- Porte de droite
-    if self.currentRoom.doors.right and playerX > self.roomX + self.roomWidth - doorThreshold then
+    if  roomCleared and self.currentRoom.doors.right and playerX > self.roomX + self.roomWidth - doorThreshold then
         local centerY = self.roomY + self.roomHeight / 2
         if playerY > centerY - doorWidth/2 and playerY < centerY + doorWidth/2 then
             self:changeRoom(1, 0)
