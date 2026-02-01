@@ -733,10 +733,6 @@ function GameState:checkItemCollisions()
         local minDist = playerRadius + itemPos.r
         
         if dist < minDist then
-            -- Collision! Créer le masque et lancer pickup
-            local Cyclope = require("dungeon.masks.cyclope")
-            local Ffp2 = require("dungeon.masks.ffp2")
-            local Scream = require("dungeon.masks.scream")
             
             local maskClass = {
                 cyclope = Cyclope,
@@ -744,7 +740,7 @@ function GameState:checkItemCollisions()
                 scream = Scream,
                 anubis = Anubis,
                 plague = Plague,
-                paladin = paladin,
+                paladin = Paladin,
                 hydre = Hydre,
                 magrit = Magrit,
                 anonymous = Anonymous,
@@ -761,88 +757,6 @@ function GameState:checkItemCollisions()
     end
 end
 
-
-function GameState:createMaskFromType(maskType)
-    local Cyclope = require("dungeon.masks.cyclope")
-    local Ffp2 = require("dungeon.masks.ffp2")
-    local Scream = require("dungeon.masks.scream")
-    
-    local maskClass = {
-        cyclope = Cyclope,
-        ffp2 = Ffp2,
-        scream = Scream
-    }
-    
-    if maskClass[maskType] then
-        return maskClass[maskType]:new()
-    end
-    return nil
-end
-
-
-
-function GameState:createMaskFromType(maskType)
-    local Cyclope = require("dungeon.masks.cyclope")
-    local Ffp2 = require("dungeon.masks.ffp2")
-    local Scream           = require("dungeon.masks.scream")
-    local Anubis = require("dungeon.masks.anubis")
-    local Plague = require("dungeon.masks.plague_doctor")
-    local Paladin = require("dungeon.masks.paladin")
-    local Hydre = require("dungeon.masks.hydre")
-    local Magrit = require("dungeon.masks.magrit")
-    local Anonymous =require("dungeon.masks.anonymous")
-    local Luchador =require("dungeon.masks.luchador")
-    
-    local maskClass = {
-        cyclope = Cyclope,
-        ffp2 = Ffp2,
-        scream = Scream,
-        anubis = Anubis,
-        plague = Plague,
-        paladin = paladin,
-        hydre = Hydre,
-        magrit = Magrit,
-        anonymous = Anonymous,
-        luchador = Luchador
-    }
-    
-    if maskClass[maskType] then
-        return maskClass[maskType]:new()
-    end
-    return nil
-end
-
-
-function GameState:equipMaskFromItem(maskType)
-    local Cyclope = require("dungeon.masks.cyclope")
-    local Ffp2 = require("dungeon.masks.ffp2")
-    local Scream           = require("dungeon.masks.scream")
-    local Anubis = require("dungeon.masks.anubis")
-    local Plague = require("dungeon.masks.plague_doctor")
-    local Paladin = require("dungeon.masks.paladin")
-    local Hydre = require("dungeon.masks.hydre")
-    local Magrit = require("dungeon.masks.magrit")
-    local Anonymous =require("dungeon.masks.anonymous")
-    local Luchador =require("dungeon.masks.luchador")
-    
-    local maskClass = {
-        cyclope = Cyclope,
-        ffp2 = Ffp2,
-        scream = Scream,
-        anubis = Anubis,
-        plague = Plague,
-        paladin = paladin,
-        hydre = Hydre,
-        magrit = Magrit,
-        anonymous = Anonymous,
-        luchador = Luchador
-    }
-    
-    if maskClass[maskType] then
-        local newMask = maskClass[maskType]:new()
-        self.player:equipMask(newMask)
-    end
-end
 
 
 function GameState:drawMaskInventory()

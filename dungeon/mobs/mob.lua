@@ -42,6 +42,9 @@ end
 function Mob:onDeath()
     -- Chance de drop
     if math.random() < self.dropChance then
+
+
+
         local masks = {"cyclope", "ffp2", "scream", "hydre", "luchador", "magrit", "anubis", "anonymous", "paladin", "plague"}
         local randomMask = masks[math.random(#masks)]
         

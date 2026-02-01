@@ -135,7 +135,7 @@ function Templar:getInfo()
         shieldActive = self.shieldActive,
         shieldTimer = self.shieldTimer,
 
-        imagePath = "dungeon/masks/assets/templar.png",  -- chemin vers l'image du masque
+        imagePath = "dungeon/masks/assets/paladin.png",  -- chemin vers l'image du masque
         description = "Active un bouclier autour du joueur qui repousse et inflige des dégâts aux ennemis proches" -- courte description
     }
 end

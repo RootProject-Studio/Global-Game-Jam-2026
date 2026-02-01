@@ -128,7 +128,7 @@ function Hydra:getInfo()
         projectileSize = self.projectileSize,
         shootCooldown = self.shootCooldown,
 
-        imagePath = "dungeon/masks/assets/hydra.png",  -- chemin vers l'image du masque
+        imagePath = "dungeon/masks/assets/hydre.png",  -- chemin vers l'image du masque
         description = "Tire plusieurs projectiles en éventail pour toucher plusieurs ennemis à la fois" -- courte description
     }
 end
