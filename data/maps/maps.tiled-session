@@ -20,14 +20,14 @@
             "selectedLayer": 1,
             "viewCenter": {
                 "x": 159.75,
-                "y": 158.25
+                "y": 159.75
             }
         },
         "buildind01L.tmx": {
             "scale": 2,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 160,
+                "x": 159.75,
                 "y": 159.75
             }
         },
@@ -52,14 +52,14 @@
             "selectedLayer": 0,
             "viewCenter": {
                 "x": 159.78947368421055,
-                "y": 160.21052631578945
+                "y": 159.78947368421052
             }
         },
         "buildind01LR.tmx": {
             "scale": 1,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 160,
+                "x": 159.5,
                 "y": 159.5
             }
         },
@@ -83,7 +83,7 @@
             "scale": 2,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 160,
+                "x": 159.75,
                 "y": 159.75
             }
         },
@@ -115,8 +115,8 @@
             "scale": 2,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 281.25,
-                "y": 136.75
+                "x": 159.75,
+                "y": 159.75
             }
         },
         "buildind01RN.tmx": {
@@ -132,7 +132,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 159.78947368421055,
-                "y": 159.78947368421052
+                "y": 107.99999999999999
             }
         },
         "buildind01RS.tmx": {
@@ -438,18 +438,18 @@
     ],
     "project": "maps.tiled-project",
     "recentFiles": [
+        "buildind01RNS.tmx",
+        "buildind01LNS.tmx",
+        "buildind01LRS.tmx",
+        "buildind01ALL.tmx",
+        "buildind01LRN.tmx",
+        "buildind01R.tmx",
+        "buildind01LR.tmx",
+        "buildind01L.tmx",
         "buildind01LN.tmx",
         "buildind01LS.tmx",
         "buildind01NS.tmx",
-        "buildind01N.tmx",
-        "buildind01S.tmx",
-        "buildind01LNS.tmx",
-        "buildind01LNS - Copie.tmx",
-        "buildind01RNS.tmx",
-        "buildind01LRS.tmx",
-        "buildind01ALL.tmx",
-        "buildind01L.tmx",
-        "buildind01LRN.tmx"
+        "buildind01N.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.tileSize": {
