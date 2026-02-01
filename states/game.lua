@@ -32,9 +32,7 @@ function GameState:enter()
     local magrit = Magrit:new()
     local anonymous = Anonymous:new()
     local luchador = Luchador:new()
-    self.player:equipMask(anubis)
-
-    self.items = {}
+    self.player:equipMask(ffp2)
 
     -- Générer un nouveau donjon
     if not DungeonGenerator then
@@ -117,6 +115,7 @@ function GameState:updateLayout()
 end
 
 function GameState:update(dt)
+    if not self.currentRoom then return end
     -- Update du joueur (Pedro gère son propre mouvement)
     if self.player then
         -- Créer le contexte de la salle pour Pedro
@@ -127,10 +126,6 @@ function GameState:update(dt)
             roomHeight = self.roomHeight
         }
         self.player:update(dt, roomContext)
-         if self.player.hp <= 0 then
-            GameStateManager:setState("menu")
-            return
-        end
     end
     
     -- Vérifier les transitions de salle via les portes
@@ -139,14 +134,8 @@ function GameState:update(dt)
     local playerX = self.player.x
     local playerY = self.player.y
     
-
-    local roomCleared = true
-    if self.currentRoom.mobs and #self.currentRoom.mobs > 0 then
-        roomCleared = false
-    end
-
     -- Porte du haut
-    if  roomCleared and self.currentRoom.doors.top and playerY < self.roomY + doorThreshold then
+    if self.currentRoom.doors.top and playerY < self.roomY + doorThreshold then
         local centerX = self.roomX + self.roomWidth / 2
         if playerX > centerX - doorWidth/2 and playerX < centerX + doorWidth/2 then
             self:changeRoom(0, -1)
@@ -156,7 +145,7 @@ function GameState:update(dt)
     end
     
     -- Porte du bas
-    if  roomCleared and self.currentRoom.doors.bottom and playerY > self.roomY + self.roomHeight - doorThreshold then
+    if self.currentRoom.doors.bottom and playerY > self.roomY + self.roomHeight - doorThreshold then
         local centerX = self.roomX + self.roomWidth / 2
         if playerX > centerX - doorWidth/2 and playerX < centerX + doorWidth/2 then
             self:changeRoom(0, 1)
@@ -166,7 +155,7 @@ function GameState:update(dt)
     end
     
     -- Porte de gauche
-    if  roomCleared and self.currentRoom.doors.left and playerX < self.roomX + doorThreshold then
+    if self.currentRoom.doors.left and playerX < self.roomX + doorThreshold then
         local centerY = self.roomY + self.roomHeight / 2
         if playerY > centerY - doorWidth/2 and playerY < centerY + doorWidth/2 then
             self:changeRoom(-1, 0)
@@ -176,7 +165,7 @@ function GameState:update(dt)
     end
     
     -- Porte de droite
-    if  roomCleared and self.currentRoom.doors.right and playerX > self.roomX + self.roomWidth - doorThreshold then
+    if self.currentRoom.doors.right and playerX > self.roomX + self.roomWidth - doorThreshold then
         local centerY = self.roomY + self.roomHeight / 2
         if playerY > centerY - doorWidth/2 and playerY < centerY + doorWidth/2 then
             self:changeRoom(1, 0)
@@ -197,8 +186,13 @@ function GameState:update(dt)
     -- Update des mobs
     self:updateMobs(dt)
 
+    -- Initialiser les items de la salle s'ils n'existent pas
+    if not self.currentRoom.items then
+        self.currentRoom.items = {}
+    end
+
     -- Update items
-    for _, item in ipairs(self.items) do
+    for _, item in ipairs(self.currentRoom.items) do
         item:update(dt)
     end
 
@@ -206,10 +200,10 @@ function GameState:update(dt)
     self:checkItemCollisions()
 
     -- Remove collected items
-    local i = #self.items
+    local i = #self.currentRoom.items
     while i >= 1 do
-        if self.items[i]:isDead() then
-            table.remove(self.items, i)
+        if self.currentRoom.items[i]:isDead() then
+            table.remove(self.currentRoom.items, i)
         end
         i = i - 1
     end
@@ -250,14 +244,16 @@ function GameState:draw()
         end
     end
 
-    for _, item in ipairs(self.items) do
-        item:draw({
-            roomX = self.roomX,
-            roomY = self.roomY,
-            roomWidth = self.roomWidth,
-            roomHeight = self.roomHeight,
-            scale = _G.gameConfig.scaleX or 1
-        })
+    if self.currentRoom and self.currentRoom.items then
+        for _, item in ipairs(self.currentRoom.items) do
+            item:draw({
+                roomX = self.roomX,
+                roomY = self.roomY,
+                roomWidth = self.roomWidth,
+                roomHeight = self.roomHeight,
+                scale = _G.gameConfig.scaleX or 1
+            })
+        end
     end
 
     
@@ -567,7 +563,11 @@ function GameState:updateMobs(dt)
             -- Récupérer l'item droppé avant de supprimer le mob
             local droppedItem = self.currentRoom.mobs[i]:onDeath()
             if droppedItem then
-                table.insert(self.items, droppedItem)
+                -- Ajouter l'item à la salle actuelle au lieu de self.items
+                if not self.currentRoom.items then
+                    self.currentRoom.items = {}
+                end
+                table.insert(self.currentRoom.items, droppedItem)
             end
             table.remove(self.currentRoom.mobs, i)
         end
@@ -668,12 +668,12 @@ function GameState:updateMobs(dt)
 end
 
 function GameState:checkItemCollisions()
-    if not self.player or #self.items == 0 then return end
-    
+    if not self.player or not self.currentRoom.items or #self.currentRoom.items == 0 then return end
+        
     local scale = _G.gameConfig.scaleX or 1
     local playerRadius = self.player.size or 8
     
-    for _, item in ipairs(self.items) do
+    for _, item in ipairs(self.currentRoom.items) do
         local itemPos = item:getAbsolutePos({
             roomX = self.roomX,
             roomY = self.roomY,
@@ -698,12 +698,26 @@ end
 function GameState:equipMaskFromItem(maskType)
     local Cyclope = require("dungeon.masks.cyclope")
     local Ffp2 = require("dungeon.masks.ffp2")
-    local Scream = require("dungeon.masks.scream")
+    local Scream           = require("dungeon.masks.scream")
+    local Anubis = require("dungeon.masks.anubis")
+    local Plague = require("dungeon.masks.plague_doctor")
+    local Paladin = require("dungeon.masks.paladin")
+    local Hydre = require("dungeon.masks.hydre")
+    local Magrit = require("dungeon.masks.magrit")
+    local Anonymous =require("dungeon.masks.anonymous")
+    local Luchador =require("dungeon.masks.luchador")
     
     local maskClass = {
         cyclope = Cyclope,
         ffp2 = Ffp2,
-        scream = Scream
+        scream = Scream,
+        anubis = Anubis,
+        plague = Plague,
+        paladin = paladin,
+        hydre = Hydre,
+        magrit = Magrit,
+        anonymous = Anonymous,
+        luchador = Luchador
     }
     
     if maskClass[maskType] then
