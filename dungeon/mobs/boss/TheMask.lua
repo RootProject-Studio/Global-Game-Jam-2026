@@ -416,16 +416,16 @@ function TheMask:draw(ctx)
         local bx = (ctx.roomX or 0) + (self.relX or 0) * (ctx.roomWidth or 1)
         local by = (ctx.roomY or 0) + (self.relY or 0) * (ctx.roomHeight or 1)
 
+        -- Draw boss hitbox (same as visual)
         love.graphics.setColor(1, 0, 0, 0.3)
         love.graphics.circle("line", bx, by, self.size)
 
         -- Show player collision ellipse used by dash calculation
         if ctx.player then
             local player = ctx.player
-            local hitRadiusMultiplier = 1
-            local rx = (player.hitboxRadiusX or 10) + (self.size or 0) * hitRadiusMultiplier
-            local ry = (player.hitboxRadiusY or 10) + (self.size or 0) * hitRadiusMultiplier
-            love.graphics.setColor(1, 0, 0, 0.25)
+            local rx = player.hitboxRadiusX or 10
+            local ry = player.hitboxRadiusY or 10
+            love.graphics.setColor(0, 1, 0, 0.25)
             love.graphics.ellipse("line", player.x, player.y, rx, ry)
         end
         love.graphics.setColor(1,1,1,1)
