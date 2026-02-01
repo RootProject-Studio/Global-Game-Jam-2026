@@ -489,6 +489,15 @@ function GameState:changeRoom(dx, dy)
 end
 
 function GameState:keypressed(key)
+    -- Vérifier si un shop est ouvert
+    for _, mob in ipairs(self.currentRoom.mobs) do
+        if mob.subtype == "traider" and mob.shopOpen then
+            mob:shopKeypressed(key, self.player)
+            return -- stop, le joueur ne bouge pas
+        end
+    end
+
+    -- Pas de shop ouvert : gestion normale
     if key == "escape" then
         GameStateManager:setState("menu")
     elseif key == "m" then
@@ -496,7 +505,6 @@ function GameState:keypressed(key)
     elseif key == "p" then
         self.debugMode = not self.debugMode
     elseif key == "r" then
-        -- Régénérer le donjon
         self:enter()
     end
 end
@@ -523,19 +531,20 @@ function GameState:updateMobs(dt)
 
     -- 1) Update each mob
     for _, mob in ipairs(self.currentRoom.mobs) do
-        mob:update(dt, {
-            roomX = roomX,
-            roomY = roomY,
-            roomWidth = roomW,
-            roomHeight = roomH,
-            playerX = self.player.x,
-            playerY = self.player.y,
-            scale = scale,
-            doors = self.currentRoom.doors,
-            player = self.player,
-            debugMode = self.debugMode
-        })
-    end
+    mob:update(dt, {
+        roomX = roomX,
+        roomY = roomY,
+        roomWidth = roomW,
+        roomHeight = roomH,
+        playerX = self.player.x,
+        playerY = self.player.y,
+        scale = scale,
+        doors = self.currentRoom.doors,
+        player = self.player,   -- ✅ ici on passe le joueur
+        debugMode = self.debugMode
+    })
+end
+
 
     -- 2) Remove dead mobs from the room
     local i = #self.currentRoom.mobs

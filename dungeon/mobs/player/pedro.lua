@@ -46,6 +46,18 @@ function Pedro:new()
 end
 
 function Pedro:update(dt, roomContext)
+
+    -- Bloquer le joueur si un shop est ouvert
+    if roomContext.mobs then
+        for _, mob in ipairs(roomContext.mobs) do
+            if mob.subtype == "traider" and mob.shopOpen then
+                -- Player cannot move while shop is open
+                self.vx = 0
+                self.vy = 0
+                return
+            end
+        end
+    end
     -- Récupérer les touches enfoncées
     local keys = _G.gameConfig.keys
     
