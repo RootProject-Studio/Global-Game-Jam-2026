@@ -9,47 +9,40 @@ local Cyclope          = require("dungeon.masks.cyclope")
 local Ffp2 = require("dungeon.masks.ffp2")
 local Scream           = require("dungeon.masks.scream")
 local AudioManager     = require("audio_manager")
-
+local Anubis = require("dungeon.masks.anubis")
+local Plague = require("dungeon.masks.plague_doctor")
+local Paladin = require("dungeon.masks.paladin")
+local Hydre = require("dungeon.masks.hydre")
+local Magrit = require("dungeon.masks.magrit")
+local Anonymous =require("dungeon.masks.anonymous")
+local Luchador =require("dungeon.masks.luchador")
+local Fire = require("dungeon.masks.fire")
+local Medic =require("dungeon.masks.medic")
 function GameState:enter()
     -- Jouer la musique du jeu avec transition fluide
-    -- Si une musique joue (du menu), elle fera un fondu vers la nouvelle
     AudioManager:fadeInMusic("music/a_boss.ogg", 1.0, 0.5)
 
+    -- Initialisation du joueur (une seule fois)
     self.player = Pedro:new()
     local cyclope = Cyclope:new()
     local ffp2 = Ffp2:new()
     local scream = Scream:new()
-    self.player:equipMask(cyclope)
+    local anubis = Anubis:new()
+    local plague = Plague:new()
+    local paladin = Paladin:new()
+    local hydre = Hydre:new()
+    local magrit = Magrit:new()
+    local anonymous = Anonymous:new()
+    local luchador = Luchador:new()
+    local fire = Fire:new()
+    local medic = Medic:new()
+    self.player:equipMask(scream)
 
     self.items = {}
 
-    -- Générer un nouveau donjon
-    if not DungeonGenerator then
-        io.stderr:write("ERREUR: DungeonGenerator non trouvé!\n")
-        self.currentRoom = nil
-        self.dungeon = {}
-        self:updateLayout()
-        return
-    end
-    
-    self.generator = DungeonGenerator:new()
-    self.dungeon = self.generator:generate()
-    self.generator:populateRooms()
-    
-    -- Trouver la salle de départ
-    self.currentRoom = nil
-    if self.dungeon then
-        for _, room in ipairs(self.dungeon) do
-            if room.type == DungeonGenerator.ROOM_TYPES.START then
-                self.currentRoom = room
-                break
-            end
-        end
-    end
-    
-    if not self.currentRoom then
-        io.stderr:write("ERREUR: Salle de départ non trouvée!\n")
-    end
+    -- Système de niveaux (persistant)
+    self.currentLevel = 1
+    self.defeatedBosses = {}
     
     -- Valeurs de base (résolution 800x600)
     self.baseWidth = 800
@@ -72,7 +65,52 @@ function GameState:enter()
     -- Mode debugging
     self.debugMode = false
     
+    -- Générer le premier donjon
+    self:generateNewLevel()
+    
     self:updateLayout()
+end
+
+function GameState:generateNewLevel()
+    -- Générer un nouveau donjon (appelé à chaque niveau)
+    if not DungeonGenerator then
+        io.stderr:write("ERREUR: DungeonGenerator non trouvé!\n")
+        self.currentRoom = nil
+        self.dungeon = {}
+        return
+    end
+    
+    self.generator = DungeonGenerator:new()
+    self.dungeon = self.generator:generate()
+    self.generator:populateRooms(self.defeatedBosses)
+    
+    -- Trouver la salle de départ
+    self.currentRoom = nil
+    if self.dungeon then
+        for _, room in ipairs(self.dungeon) do
+            if room.type == DungeonGenerator.ROOM_TYPES.START then
+                self.currentRoom = room
+                break
+            end
+        end
+    end
+    
+    if not self.currentRoom then
+        io.stderr:write("ERREUR: Salle de départ non trouvée!\n")
+    end
+    
+    -- Réinitialiser la position du joueur au centre de la salle de départ
+    local scale = math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+    local roomWidth = self.baseRoomWidth * scale
+    local roomHeight = self.baseRoomHeight * scale
+    local roomX = (_G.gameConfig.windowWidth - roomWidth) / 2
+    local roomY = (_G.gameConfig.windowHeight - roomHeight) / 2
+    
+    self.player.x = roomX + roomWidth / 2
+    self.player.y = roomY + roomHeight / 2
+    
+    -- Nettoyer les projectiles
+    self.player.projectiles = {}
 end
 
 function GameState:updateLayout()
@@ -104,6 +142,15 @@ function GameState:updateLayout()
 end
 
 function GameState:update(dt)
+    if not self.currentRoom then return end
+
+    if self.player
+        and self.player.maskManager
+        and self.player.maskManager.open then
+            return
+        end
+
+
     -- Update du joueur (Pedro gère son propre mouvement)
     if self.player then
         -- Créer le contexte de la salle pour Pedro
@@ -122,6 +169,51 @@ function GameState:update(dt)
     local playerX = self.player.x
     local playerY = self.player.y
     
+
+    local roomCleared = true
+    if self.currentRoom.mobs and #self.currentRoom.mobs > 0 then
+        roomCleared = false
+    end
+
+    -- Vérifier si le boss est vaincu et créer la porte de niveau
+    if self.currentRoom.type == DungeonGenerator.ROOM_TYPES.BOSS then
+        -- Activer la porte de niveau si le boss est vaincu
+        if roomCleared and not self.currentRoom.levelDoorActive then
+            self.currentRoom.levelDoorActive = true
+            
+            -- Sauvegarder le boss vaincu
+            if self.currentRoom.bossType then
+                local alreadySaved = false
+                for _, defeatedBoss in ipairs(self.defeatedBosses) do
+                    if defeatedBoss == self.currentRoom.bossType then
+                        alreadySaved = true
+                        break
+                    end
+                end
+                if not alreadySaved then
+                    table.insert(self.defeatedBosses, self.currentRoom.bossType)
+                end
+            end
+        end
+        
+        -- Vérifier collision avec la porte de niveau
+        if self.currentRoom.levelDoorActive then
+            local doorX = self.roomX + self.roomWidth / 2
+            local doorY = self.roomY + self.roomHeight - 40
+            local doorWidth = 80
+            local doorHeight = 40
+            
+            if playerX > doorX - doorWidth/2 and playerX < doorX + doorWidth/2 and
+               playerY > doorY and playerY < doorY + doorHeight then
+                -- Passer au niveau suivant
+                self.currentLevel = self.currentLevel + 1
+                self:generateNewLevel()
+                return
+            end
+        end
+    end
+
+
     -- Porte du haut
     if self.currentRoom.doors.top and playerY < self.roomY + doorThreshold then
         local centerX = self.roomX + self.roomWidth / 2
@@ -174,8 +266,13 @@ function GameState:update(dt)
     -- Update des mobs
     self:updateMobs(dt)
 
+    -- Initialiser les items de la salle s'ils n'existent pas
+    if not self.currentRoom.items then
+        self.currentRoom.items = {}
+    end
+
     -- Update items
-    for _, item in ipairs(self.items) do
+    for _, item in ipairs(self.currentRoom.items) do
         item:update(dt)
     end
 
@@ -183,10 +280,10 @@ function GameState:update(dt)
     self:checkItemCollisions()
 
     -- Remove collected items
-    local i = #self.items
+    local i = #self.currentRoom.items
     while i >= 1 do
-        if self.items[i]:isDead() then
-            table.remove(self.items, i)
+        if self.currentRoom.items[i]:isDead() then
+            table.remove(self.currentRoom.items, i)
         end
         i = i - 1
     end
@@ -227,14 +324,16 @@ function GameState:draw()
         end
     end
 
-    for _, item in ipairs(self.items) do
-        item:draw({
-            roomX = self.roomX,
-            roomY = self.roomY,
-            roomWidth = self.roomWidth,
-            roomHeight = self.roomHeight,
-            scale = _G.gameConfig.scaleX or 1
-        })
+    if self.currentRoom and self.currentRoom.items then
+        for _, item in ipairs(self.currentRoom.items) do
+            item:draw({
+                roomX = self.roomX,
+                roomY = self.roomY,
+                roomWidth = self.roomWidth,
+                roomHeight = self.roomHeight,
+                scale = _G.gameConfig.scaleX or 1
+            })
+        end
     end
 
     
@@ -249,6 +348,10 @@ function GameState:draw()
     -- Affichage du debugging si activé
     if self.debugMode then
         self:drawDebugInfo()
+    end
+
+    if self.player.maskManager.open then
+        self:drawMaskInventory()
     end
 
 
@@ -403,6 +506,28 @@ function GameState:drawDoors()
         love.graphics.setColor(0.5, 0.4, 0.3)
         love.graphics.rectangle("line", self.roomX, centerRoomY - doorWidth/2, doorHeight, doorWidth)
     end
+
+      -- Porte de niveau (après boss)
+    if self.currentRoom.type == DungeonGenerator.ROOM_TYPES.BOSS and self.currentRoom.levelDoorActive then
+        local doorX = self.roomX + self.roomWidth / 2
+        local doorY = self.roomY + self.roomHeight - 40
+        local doorWidth = 80
+        local doorHeight = 40
+        
+        -- Porte dorée qui pulse
+        local pulse = 0.7 + 0.3 * math.sin(love.timer.getTime() * 3)
+        
+        -- Fond doré
+        love.graphics.setColor(1, 0.8, 0, 0.8 * pulse)
+        love.graphics.rectangle("fill", doorX - doorWidth/2, doorY, doorWidth, doorHeight, 5, 5)
+        
+        -- Contour brillant
+        love.graphics.setColor(1, 1, 0.5, pulse)
+        love.graphics.setLineWidth(4)
+        love.graphics.rectangle("line", doorX - doorWidth/2, doorY, doorWidth, doorHeight, 5, 5)
+        
+    end
+
 end
 
 function GameState:drawMiniMap()
@@ -489,6 +614,38 @@ function GameState:changeRoom(dx, dy)
 end
 
 function GameState:keypressed(key)
+    local mm = self.player.maskManager
+
+    if mm then
+        if mm.pickupMode then
+            if key == "left" then
+                mm:moveSelection("left")
+            elseif key == "right" then
+                mm:moveSelection("right")
+            elseif key == "return" then
+                mm:confirmPickup(self.player)
+            elseif key == "backspace" then
+                mm:cancelPickup()
+            end
+            return
+        end
+
+        if key == "r" then
+            mm:toggle()
+            return
+        end
+
+        if mm.open then
+            if key == "left" then mm:selectPrev()
+            elseif key == "right" then mm:selectNext()
+            elseif key == "backspace" then
+                mm:unequip(mm.selectedSlot)
+            end
+            return
+        end
+    end
+
+    -- Inputs normaux du jeu
     -- Vérifier si un shop est ouvert
     for _, mob in ipairs(self.currentRoom.mobs) do
         if mob.subtype == "traider" and mob.shopOpen then
@@ -504,10 +661,12 @@ function GameState:keypressed(key)
         self.showMap = not self.showMap
     elseif key == "p" then
         self.debugMode = not self.debugMode
-    elseif key == "r" then
+    elseif key == "f5" then
         self:enter()
     end
 end
+
+
 
 function GameState:exit()
     -- Revenir à la musique du menu avec transition fluide
@@ -553,7 +712,11 @@ end
             -- Récupérer l'item droppé avant de supprimer le mob
             local droppedItem = self.currentRoom.mobs[i]:onDeath()
             if droppedItem then
-                table.insert(self.items, droppedItem)
+                -- Ajouter l'item à la salle actuelle au lieu de self.items
+                if not self.currentRoom.items then
+                    self.currentRoom.items = {}
+                end
+                table.insert(self.currentRoom.items, droppedItem)
             end
             table.remove(self.currentRoom.mobs, i)
         end
@@ -654,12 +817,12 @@ end
 end
 
 function GameState:checkItemCollisions()
-    if not self.player or #self.items == 0 then return end
-    
+    if not self.player or not self.currentRoom.items or #self.currentRoom.items == 0 then return end
+        
     local scale = _G.gameConfig.scaleX or 1
     local playerRadius = self.player.size or 8
     
-    for _, item in ipairs(self.items) do
+    for _, item in ipairs(self.currentRoom.items) do
         local itemPos = item:getAbsolutePos({
             roomX = self.roomX,
             roomY = self.roomY,
@@ -674,28 +837,173 @@ function GameState:checkItemCollisions()
         local minDist = playerRadius + itemPos.r
         
         if dist < minDist then
-            -- Collision! Équiper le masque
-            self:equipMaskFromItem(item.maskType)
-            item:collect()
+            
+            local maskClass = {
+                cyclope = Cyclope,
+                ffp2 = Ffp2,
+                scream = Scream,
+                anubis = Anubis,
+                plague = Plague,
+                paladin = Paladin,
+                hydre = Hydre,
+                magrit = Magrit,
+                anonymous = Anonymous,
+                luchador = Luchador
+            }
+            
+            if maskClass[item.maskType] then
+                local newMask = maskClass[item.maskType]:new()
+                self.player.maskManager:startPickup(newMask)
+            end
+
+            item:collect()  -- retirer l'item du sol
         end
     end
 end
 
-function GameState:equipMaskFromItem(maskType)
-    local Cyclope = require("dungeon.masks.cyclope")
-    local Ffp2 = require("dungeon.masks.ffp2")
-    local Scream = require("dungeon.masks.scream")
-    
-    local maskClass = {
-        cyclope = Cyclope,
-        ffp2 = Ffp2,
-        scream = Scream
-    }
-    
-    if maskClass[maskType] then
-        local newMask = maskClass[maskType]:new()
-        self.player:equipMask(newMask)
+
+
+function GameState:drawMaskInventory()
+    local mm = self.player.maskManager
+    if not mm or not mm.open then return end
+
+    local scale = _G.gameConfig.scale or 1
+    local width, height = 250 * scale, 350 * scale -- un peu plus petit
+    local slotSpacing = 50 * scale
+    local totalWidth = width * 2 + slotSpacing
+    local startX = (_G.gameConfig.windowWidth - totalWidth) / 2
+    local y = 100 * scale
+
+    love.graphics.setColor(0, 0, 0, 0.8)
+    -- Fond du slot gauche
+    love.graphics.rectangle("fill", startX, y, width, height)
+    -- Fond du slot droit
+    love.graphics.rectangle("fill", startX + width + slotSpacing, y, width, height)
+
+    for i, slotX in ipairs({startX, startX + width + slotSpacing}) do
+        local mask = mm.slots[i]
+
+        -- Cadre de sélection
+        if mm.selectedSlot == i then
+            love.graphics.setColor(1, 1, 0)
+            love.graphics.setLineWidth(3)
+            love.graphics.rectangle("line", slotX, y, width, height)
+        end
+
+        if mask then
+            -- Image
+            if mask.getInfo then
+                local info = mask:getInfo()
+                if info.imagePath then
+                    local img = love.graphics.newImage(info.imagePath)
+                    local imgScale = math.min(width / 2 / img:getWidth(), (height/3) / img:getHeight())
+                    love.graphics.setColor(1,1,1)
+                    love.graphics.draw(img, slotX + width/2, y + height/6, 0, imgScale, imgScale, img:getWidth()/2, img:getHeight()/2)
+                end
+
+                -- Description
+                if info.description then
+                    love.graphics.setColor(1,1,1)
+                    love.graphics.printf(info.description, slotX + 10, y + height/3, width - 20, "center")
+                end
+
+                -- Paramètres
+                local paramsY = y + height/2
+                local spacing = 20 * scale
+
+                -- Calculer hauteur dispo
+                local textHeight = height - (paramsY - y) - 10
+                love.graphics.setScissor(slotX, paramsY, width, textHeight)
+
+                local lineY = paramsY - (mm.scrollOffset or 0)
+                for k,v in pairs(info) do
+                    if k ~= "imagePath" and k ~= "description" then
+                        love.graphics.print(k .. ": " .. tostring(v), slotX + 10, lineY)
+                        lineY = lineY + spacing
+                    end
+                end
+                love.graphics.setScissor()
+            end
+        else
+            love.graphics.setColor(0.5,0.5,0.5)
+            love.graphics.print("Vide", slotX + width/2 - 20, y + height/2)
+        end
+    end
+
+    if mm.pickingUpMask then
+        local pickX = screenW/2
+        local pickY = y - 100*scale
+        local info = mm.pickingUpMask:getInfo()
+
+        -- Image au centre
+        if info.imagePath then
+            local img = love.graphics.newImage(info.imagePath)
+            love.graphics.setColor(1,1,1)
+            local imgScale = 0.5*scale
+            love.graphics.draw(img, pickX, pickY, 0, imgScale, imgScale, img:getWidth()/2, img:getHeight()/2)
+        end
+
+        -- Description
+        if info.description then
+            love.graphics.setColor(1,1,1)
+            love.graphics.printf(info.description, pickX - width/2, pickY + 50, width, "center")
+        end
+
+        -- Paramètres
+        local lineY = pickY + 80 + mm.pickupScroll
+        for k,v in pairs(info) do
+            if k ~= "imagePath" and k ~= "description" then
+                love.graphics.setColor(1,1,1)
+                love.graphics.print(k..": "..tostring(v), pickX - width/2 + 10, lineY)
+                lineY = lineY + 22*scale
+            end
+        end
     end
 end
+
+
+-- Dans ton update de GameState
+function GameState:updateMaskScroll(key)
+    local mm = self.player.maskManager
+    if not mm or not mm.open then return end
+
+    local scrollStep = 20 * (_G.gameConfig.scale or 1)  -- décalage par flèche
+
+    -- Récupérer le slot sélectionné
+    local mask = mm.slots[mm.selectedSlot]
+    if not mask or not mask.getInfo then return end
+    local info = mask:getInfo()
+
+    -- Calculer la hauteur totale des paramètres à afficher
+    local spacing = 20 * (_G.gameConfig.scale or 1)
+    local totalLines = 0
+    for k,v in pairs(info) do
+        if k ~= "imagePath" and k ~= "description" then
+            totalLines = totalLines + 1
+        end
+    end
+    local totalHeight = totalLines * spacing
+
+    local height = 350 * (_G.gameConfig.scale or 1)
+    local paramsY = height/2  -- même calcul que dans drawMaskInventory
+    local visibleHeight = height - (paramsY) - 10  -- espace disponible pour le texte
+
+    mm.scrollOffset = mm.scrollOffset or 0
+
+    -- Gestion scroll
+    if key == "down" then
+        mm.scrollOffset = math.min(mm.scrollOffset + scrollStep, math.max(0, totalHeight - visibleHeight))
+    elseif key == "up" then
+        mm.scrollOffset = math.max(mm.scrollOffset - scrollStep, 0)
+    end
+
+    
+end
+
+
+
+
+
+
 
 return GameState
