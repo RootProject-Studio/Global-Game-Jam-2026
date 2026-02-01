@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="20" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
- <tileset firstgid="1" source="tileset_modern_rpg_background.tsx"/>
- <tileset firstgid="257" source="tileset_modern_rpg_furniture.tsx"/>
- <tileset firstgid="513" source="tileset_modern_rpg_props.tsx"/>
+ <tileset firstgid="1" name="tileset_modern_rpg_background" tilewidth="16" tileheight="16" tilecount="256" columns="16">
+  <image source="../../assets/Dark City 16x16 Tileset/tileset_modern_rpg_background.png" width="256" height="256"/>
+ </tileset>
+ <tileset firstgid="257" name="tileset_modern_rpg_furniture" tilewidth="16" tileheight="16" tilecount="256" columns="16">
+  <image source="../../assets/Dark City 16x16 Tileset/tileset_modern_rpg_furniture.png" width="256" height="256"/>
+ </tileset>
+ <tileset firstgid="513" name="tileset_modern_rpg_props" tilewidth="16" tileheight="16" tilecount="256" columns="16">
+  <image source="../../assets/Dark City 16x16 Tileset/tileset_modern_rpg_props.png" width="256" height="256"/>
+ </tileset>
  <layer id="4" name="collision" width="20" height="20">
   <data encoding="csv">
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -27,7 +33,7 @@
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 </data>
  </layer>
- <layer id="1" name="terrain" width="20" height="20" visible="0">
+ <layer id="1" name="terrain" width="20" height="20">
   <data encoding="csv">
 86,41,57,57,42,42,57,43,42,42,43,57,57,57,57,57,57,57,57,86,
 86,57,57,57,57,57,57,57,57,57,57,57,57,57,58,57,57,45,57,86,
@@ -51,7 +57,7 @@
 53,53,53,53,53,53,53,53,53,88,53,53,53,53,53,53,53,53,53,53
 </data>
  </layer>
- <layer id="2" name="upper" width="20" height="20" visible="0">
+ <layer id="2" name="upper" width="20" height="20">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,324,324,0,0,0,0,0,619,0,324,0,0,0,324,0,0,0,
@@ -75,7 +81,7 @@
 0,0,0,340,0,0,0,340,0,0,33,0,340,0,0,0,340,0,0,0
 </data>
  </layer>
- <layer id="3" name="upper second" width="20" height="20" visible="0">
+ <layer id="3" name="upper second" width="20" height="20">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,397,398,398,399,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

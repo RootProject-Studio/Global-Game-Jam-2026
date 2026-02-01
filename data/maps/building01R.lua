@@ -18,17 +18,89 @@ return {
     {
       name = "tileset_modern_rpg_background",
       firstgid = 1,
-      filename = "tileset_modern_rpg_background.tsx"
+      class = "",
+      tilewidth = 16,
+      tileheight = 16,
+      spacing = 0,
+      margin = 0,
+      columns = 16,
+      image = "../../assets/Dark City 16x16 Tileset/tileset_modern_rpg_background.png",
+      imagewidth = 256,
+      imageheight = 256,
+      objectalignment = "unspecified",
+      tilerendersize = "tile",
+      fillmode = "stretch",
+      tileoffset = {
+        x = 0,
+        y = 0
+      },
+      grid = {
+        orientation = "orthogonal",
+        width = 16,
+        height = 16
+      },
+      properties = {},
+      wangsets = {},
+      tilecount = 256,
+      tiles = {}
     },
     {
       name = "tileset_modern_rpg_furniture",
       firstgid = 257,
-      filename = "tileset_modern_rpg_furniture.tsx"
+      class = "",
+      tilewidth = 16,
+      tileheight = 16,
+      spacing = 0,
+      margin = 0,
+      columns = 16,
+      image = "../../assets/Dark City 16x16 Tileset/tileset_modern_rpg_furniture.png",
+      imagewidth = 256,
+      imageheight = 256,
+      objectalignment = "unspecified",
+      tilerendersize = "tile",
+      fillmode = "stretch",
+      tileoffset = {
+        x = 0,
+        y = 0
+      },
+      grid = {
+        orientation = "orthogonal",
+        width = 16,
+        height = 16
+      },
+      properties = {},
+      wangsets = {},
+      tilecount = 256,
+      tiles = {}
     },
     {
       name = "tileset_modern_rpg_props",
       firstgid = 513,
-      filename = "tileset_modern_rpg_props.tsx"
+      class = "",
+      tilewidth = 16,
+      tileheight = 16,
+      spacing = 0,
+      margin = 0,
+      columns = 16,
+      image = "../../assets/Dark City 16x16 Tileset/tileset_modern_rpg_props.png",
+      imagewidth = 256,
+      imageheight = 256,
+      objectalignment = "unspecified",
+      tilerendersize = "tile",
+      fillmode = "stretch",
+      tileoffset = {
+        x = 0,
+        y = 0
+      },
+      grid = {
+        orientation = "orthogonal",
+        width = 16,
+        height = 16
+      },
+      properties = {},
+      wangsets = {},
+      tilecount = 256,
+      tiles = {}
     }
   },
   layers = {
