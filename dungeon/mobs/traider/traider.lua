@@ -1,5 +1,9 @@
 local Mob = require("dungeon.mobs.mob")
 local Traider = setmetatable({}, {__index = Mob})
+local Medic =require("dungeon.masks.medic")
+local Anonymous =require("dungeon.masks.anonymous")
+local Paladin = require("dungeon.masks.paladin")
+
 Traider.__index = Traider
 
 function Traider:new(data)
@@ -27,10 +31,11 @@ function Traider:new(data)
     m.ignoreCollision = true
     m.shopOpen = false
     m.shopItems = {
-        {name = "Potion", price = 10},
-        {name = "Épée", price = 50},
-        {name = "Bouclier", price = 30}
+        Paladin,
+        Anonymous,
+        Medic,
     }
+
 
     m.selectedItem = 1 -- Item sélectionné par défaut
 
@@ -55,6 +60,7 @@ function Traider:update(dt, ctx)
 
     if self:checkCollision(player, ctx) and not self.shopOpen then
         self.shopOpen = true
+        player.isImmobile = true  -- Bloquer le joueur dès l'ouverture du shop
     end
 end
 
@@ -97,14 +103,17 @@ function Traider:drawShop()
 
     love.graphics.print("SHOP DU MARCHAND", x + padding, y + padding)
 
-    for i, item in ipairs(self.shopItems) do
-        if i == self.selectedItem then
-            love.graphics.setColor(1, 1, 0) -- jaune pour l'item sélectionné
-        else
-            love.graphics.setColor(1, 1, 1)
-        end
-        love.graphics.print(item.name .. " - " .. item.price .. " pièces", x + padding, y + padding + i * lineHeight)
+    -- Boucle sur les items du shop
+    for i, itemClass in ipairs(self.shopItems) do
+        local item = itemClass:new()
+        local color = (i == self.selectedItem) and {1,1,0} or {1,1,1}
+        love.graphics.setColor(color)
+
+        -- Fallback local pour le name
+        local itemName = item.name or "Masque"
+        love.graphics.print(itemName, x + padding, y + padding + i * lineHeight)
     end
+
 end
 
 -- Sélectionner item avec les touches
@@ -118,26 +127,25 @@ function Traider:shopKeypressed(key, player)
         self.selectedItem = self.selectedItem + 1
         if self.selectedItem > #self.shopItems then self.selectedItem = 1 end
     elseif key == "return" then
-        self:buyItem(player)
-    elseif key == "escape" then
+        -- Acheter l'item
+        local itemClass = self.shopItems[self.selectedItem]
+        local newMask = itemClass:new()
+
+        -- Fallback local pour le name
+        if not newMask.name then
+            newMask.name = "Masque"
+        end
+
+        player.maskManager:startPickup(newMask)
+
+        -- Fermer le shop et débloquer le joueur
         self.shopOpen = false
+        player.isImmobile = false
+    elseif key == "escape" then
+        -- Fermer le shop sans acheter
+        self.shopOpen = false
+        player.isImmobile = false
     end
-end
-
-function Traider:buyItem(player)
-    local item = self.shopItems[self.selectedItem]
-    if player.gold >= item.price then
-        player.gold = player.gold - item.price
-        -- Ajouter l’item à l’inventaire
-        table.insert(player.inventory, item)
-        print("Acheté : " .. item.name)
-    else
-        print("Pas assez d'or pour " .. item.name)
-    end
-end
-
-function Traider:closeShop()
-    self.shopOpen = false
 end
 
 return Traider

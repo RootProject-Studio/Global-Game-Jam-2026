@@ -148,7 +148,7 @@ function GameState:update(dt)
         and self.player.maskManager
         and self.player.maskManager.open then
             return
-        end
+    end
 
 
     -- Update du joueur (Pedro gère son propre mouvement)
@@ -1175,11 +1175,5 @@ function GameState:updateMaskScroll(key)
 
     
 end
-
-
-
-
-
-
 
 return GameState
