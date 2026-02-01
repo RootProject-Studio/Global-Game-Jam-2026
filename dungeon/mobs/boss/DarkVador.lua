@@ -30,6 +30,15 @@ function DarkVador:new(data)
     m.waveCooldown = 0
     m.waveInterval = 2 + math.random() -- 2 à 3 sec
 
+    m.currentFrame = 1
+    m.frameTime = 0
+    m.frameDelay = 0.1
+
+    m.image = {
+        love.graphics.newImage("dungeon/mobs/boss/assets/dodo1.png"),
+        love.graphics.newImage("dungeon/mobs/boss/assets/dodo2.png")
+    }
+
     return m
 end
 
@@ -37,8 +46,11 @@ end
 function DarkVador:update(dt, ctx)
     if not self.projectiles then self.projectiles = {} end
 
+    isMoving = false
+
     if self.state == "moving" then
         -- déplacement vers coin
+            isMoving = true
         if not self.targetCorner then
             local choices = {}
             for _, c in ipairs(self.corners) do
@@ -109,6 +121,20 @@ function DarkVador:update(dt, ctx)
                 table.remove(self.projectiles, i)
             end
         end
+    end
+
+    if isMoving then
+        self.frameTime = self.frameTime + dt
+        if self.frameTime >= self.frameDelay then
+            self.frameTime = 0
+            self.currentFrame = self.currentFrame + 1
+            if self.currentFrame > #self.image then
+                self.currentFrame = 1
+            end
+        end
+    else
+        self.frameTime = 0
+        self.currentFrame = 1
     end
 
     if ctx.player then
@@ -220,8 +246,18 @@ function DarkVador:draw(ctx)
     local y = ctx.roomY + self.relY * ctx.roomHeight
 
     -- Boss
-    love.graphics.setColor(0,0,0)
-    love.graphics.circle("fill", x, y, self.size * scale)
+    -- love.graphics.setColor(0,0,0)
+    -- love.graphics.circle("fill", x, y, self.size * scale)
+
+    if self.image and self.image[self.currentFrame] then
+        love.graphics.setColor(1, 1, 1)
+        local img = self.image[self.currentFrame]
+        local imgWidth = img:getWidth()
+        local imgHeight = img:getHeight()
+        local scaleX = (self.size * 5) / imgWidth
+        local scaleY = (self.size * 5) / imgHeight
+        love.graphics.draw(img, x, y, 0, scaleX, scaleY, imgWidth/2, imgHeight/2)
+    end
 
     -- Projectiles = barres
     for _, p in ipairs(self.projectiles) do
