@@ -116,6 +116,14 @@ end
 
 function GameState:update(dt)
     if not self.currentRoom then return end
+
+    if self.player
+        and self.player.maskManager
+        and self.player.maskManager.open then
+            return
+        end
+
+
     -- Update du joueur (Pedro gère son propre mouvement)
     if self.player then
         -- Créer le contexte de la salle pour Pedro
@@ -268,6 +276,10 @@ function GameState:draw()
     -- Affichage du debugging si activé
     if self.debugMode then
         self:drawDebugInfo()
+    end
+
+    if self.player.maskManager.open then
+        self:drawMaskInventory()
     end
 
 
@@ -508,17 +520,50 @@ function GameState:changeRoom(dx, dy)
 end
 
 function GameState:keypressed(key)
+    local mm = self.player.maskManager
+
+    if mm then
+        if mm.pickupMode then
+            if key == "left" then
+                mm:moveSelection("left")
+            elseif key == "right" then
+                mm:moveSelection("right")
+            elseif key == "return" then
+                mm:confirmPickup(self.player)
+            elseif key == "backspace" then
+                mm:cancelPickup()
+            end
+            return
+        end
+
+        if key == "r" then
+            mm:toggle()
+            return
+        end
+
+        if mm.open then
+            if key == "left" then mm:selectPrev()
+            elseif key == "right" then mm:selectNext()
+            elseif key == "backspace" then
+                mm:unequip(mm.selectedSlot)
+            end
+            return
+        end
+    end
+
+    -- Inputs normaux du jeu
     if key == "escape" then
         GameStateManager:setState("menu")
     elseif key == "m" then
         self.showMap = not self.showMap
     elseif key == "p" then
         self.debugMode = not self.debugMode
-    elseif key == "r" then
-        -- Régénérer le donjon
+    elseif key == "f5" then
         self:enter()
     end
 end
+
+
 
 function GameState:exit()
     -- Revenir à la musique du menu avec transition fluide
@@ -688,12 +733,85 @@ function GameState:checkItemCollisions()
         local minDist = playerRadius + itemPos.r
         
         if dist < minDist then
-            -- Collision! Équiper le masque
-            self:equipMaskFromItem(item.maskType)
-            item:collect()
+            -- Collision! Créer le masque et lancer pickup
+            local Cyclope = require("dungeon.masks.cyclope")
+            local Ffp2 = require("dungeon.masks.ffp2")
+            local Scream = require("dungeon.masks.scream")
+            
+            local maskClass = {
+                cyclope = Cyclope,
+                ffp2 = Ffp2,
+                scream = Scream,
+                anubis = Anubis,
+                plague = Plague,
+                paladin = paladin,
+                hydre = Hydre,
+                magrit = Magrit,
+                anonymous = Anonymous,
+                luchador = Luchador
+            }
+            
+            if maskClass[item.maskType] then
+                local newMask = maskClass[item.maskType]:new()
+                self.player.maskManager:startPickup(newMask)
+            end
+
+            item:collect()  -- retirer l'item du sol
         end
     end
 end
+
+
+function GameState:createMaskFromType(maskType)
+    local Cyclope = require("dungeon.masks.cyclope")
+    local Ffp2 = require("dungeon.masks.ffp2")
+    local Scream = require("dungeon.masks.scream")
+    
+    local maskClass = {
+        cyclope = Cyclope,
+        ffp2 = Ffp2,
+        scream = Scream
+    }
+    
+    if maskClass[maskType] then
+        return maskClass[maskType]:new()
+    end
+    return nil
+end
+
+
+
+function GameState:createMaskFromType(maskType)
+    local Cyclope = require("dungeon.masks.cyclope")
+    local Ffp2 = require("dungeon.masks.ffp2")
+    local Scream           = require("dungeon.masks.scream")
+    local Anubis = require("dungeon.masks.anubis")
+    local Plague = require("dungeon.masks.plague_doctor")
+    local Paladin = require("dungeon.masks.paladin")
+    local Hydre = require("dungeon.masks.hydre")
+    local Magrit = require("dungeon.masks.magrit")
+    local Anonymous =require("dungeon.masks.anonymous")
+    local Luchador =require("dungeon.masks.luchador")
+    
+    local maskClass = {
+        cyclope = Cyclope,
+        ffp2 = Ffp2,
+        scream = Scream,
+        anubis = Anubis,
+        plague = Plague,
+        paladin = paladin,
+        hydre = Hydre,
+        magrit = Magrit,
+        anonymous = Anonymous,
+        luchador = Luchador
+    }
+    
+    if maskClass[maskType] then
+        return maskClass[maskType]:new()
+    end
+    return nil
+end
+
 
 function GameState:equipMaskFromItem(maskType)
     local Cyclope = require("dungeon.masks.cyclope")
@@ -725,5 +843,149 @@ function GameState:equipMaskFromItem(maskType)
         self.player:equipMask(newMask)
     end
 end
+
+
+function GameState:drawMaskInventory()
+    local mm = self.player.maskManager
+    if not mm or not mm.open then return end
+
+    local scale = _G.gameConfig.scale or 1
+    local width, height = 250 * scale, 350 * scale -- un peu plus petit
+    local slotSpacing = 50 * scale
+    local totalWidth = width * 2 + slotSpacing
+    local startX = (_G.gameConfig.windowWidth - totalWidth) / 2
+    local y = 100 * scale
+
+    love.graphics.setColor(0, 0, 0, 0.8)
+    -- Fond du slot gauche
+    love.graphics.rectangle("fill", startX, y, width, height)
+    -- Fond du slot droit
+    love.graphics.rectangle("fill", startX + width + slotSpacing, y, width, height)
+
+    for i, slotX in ipairs({startX, startX + width + slotSpacing}) do
+        local mask = mm.slots[i]
+
+        -- Cadre de sélection
+        if mm.selectedSlot == i then
+            love.graphics.setColor(1, 1, 0)
+            love.graphics.setLineWidth(3)
+            love.graphics.rectangle("line", slotX, y, width, height)
+        end
+
+        if mask then
+            -- Image
+            if mask.getInfo then
+                local info = mask:getInfo()
+                if info.imagePath then
+                    local img = love.graphics.newImage(info.imagePath)
+                    local imgScale = math.min(width / 2 / img:getWidth(), (height/3) / img:getHeight())
+                    love.graphics.setColor(1,1,1)
+                    love.graphics.draw(img, slotX + width/2, y + height/6, 0, imgScale, imgScale, img:getWidth()/2, img:getHeight()/2)
+                end
+
+                -- Description
+                if info.description then
+                    love.graphics.setColor(1,1,1)
+                    love.graphics.printf(info.description, slotX + 10, y + height/3, width - 20, "center")
+                end
+
+                -- Paramètres
+                local paramsY = y + height/2
+                local spacing = 20 * scale
+
+                -- Calculer hauteur dispo
+                local textHeight = height - (paramsY - y) - 10
+                love.graphics.setScissor(slotX, paramsY, width, textHeight)
+
+                local lineY = paramsY - (mm.scrollOffset or 0)
+                for k,v in pairs(info) do
+                    if k ~= "imagePath" and k ~= "description" then
+                        love.graphics.print(k .. ": " .. tostring(v), slotX + 10, lineY)
+                        lineY = lineY + spacing
+                    end
+                end
+                love.graphics.setScissor()
+            end
+        else
+            love.graphics.setColor(0.5,0.5,0.5)
+            love.graphics.print("Vide", slotX + width/2 - 20, y + height/2)
+        end
+    end
+
+    if mm.pickingUpMask then
+        local pickX = screenW/2
+        local pickY = y - 100*scale
+        local info = mm.pickingUpMask:getInfo()
+
+        -- Image au centre
+        if info.imagePath then
+            local img = love.graphics.newImage(info.imagePath)
+            love.graphics.setColor(1,1,1)
+            local imgScale = 0.5*scale
+            love.graphics.draw(img, pickX, pickY, 0, imgScale, imgScale, img:getWidth()/2, img:getHeight()/2)
+        end
+
+        -- Description
+        if info.description then
+            love.graphics.setColor(1,1,1)
+            love.graphics.printf(info.description, pickX - width/2, pickY + 50, width, "center")
+        end
+
+        -- Paramètres
+        local lineY = pickY + 80 + mm.pickupScroll
+        for k,v in pairs(info) do
+            if k ~= "imagePath" and k ~= "description" then
+                love.graphics.setColor(1,1,1)
+                love.graphics.print(k..": "..tostring(v), pickX - width/2 + 10, lineY)
+                lineY = lineY + 22*scale
+            end
+        end
+    end
+end
+
+
+-- Dans ton update de GameState
+function GameState:updateMaskScroll(key)
+    local mm = self.player.maskManager
+    if not mm or not mm.open then return end
+
+    local scrollStep = 20 * (_G.gameConfig.scale or 1)  -- décalage par flèche
+
+    -- Récupérer le slot sélectionné
+    local mask = mm.slots[mm.selectedSlot]
+    if not mask or not mask.getInfo then return end
+    local info = mask:getInfo()
+
+    -- Calculer la hauteur totale des paramètres à afficher
+    local spacing = 20 * (_G.gameConfig.scale or 1)
+    local totalLines = 0
+    for k,v in pairs(info) do
+        if k ~= "imagePath" and k ~= "description" then
+            totalLines = totalLines + 1
+        end
+    end
+    local totalHeight = totalLines * spacing
+
+    local height = 350 * (_G.gameConfig.scale or 1)
+    local paramsY = height/2  -- même calcul que dans drawMaskInventory
+    local visibleHeight = height - (paramsY) - 10  -- espace disponible pour le texte
+
+    mm.scrollOffset = mm.scrollOffset or 0
+
+    -- Gestion scroll
+    if key == "down" then
+        mm.scrollOffset = math.min(mm.scrollOffset + scrollStep, math.max(0, totalHeight - visibleHeight))
+    elseif key == "up" then
+        mm.scrollOffset = math.max(mm.scrollOffset - scrollStep, 0)
+    end
+
+    
+end
+
+
+
+
+
+
 
 return GameState

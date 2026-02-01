@@ -122,4 +122,22 @@ end
 function Luchador:effect()
 end
 
+function Luchador:getInfo()
+    return {
+        name = self.name,
+        attackType = self.attackType,
+        damage = self.damage,
+        grabRange = self.grabRange,
+        throwDistance = self.throwDistance,
+        throwDamage = self.throwDamage,
+        collisionDamage = self.collisionDamage,
+        projectileSpeed = self.projectileSpeed,
+        shootCooldown = self.shootCooldown,
+
+        imagePath = "dungeon/masks/assets/luchador.png",  -- chemin vers l'image du masque
+        description = "Saisit un ennemi proche et le projette pour infliger des dégâts aux ennemis percutés" -- courte description
+    }
+end
+
+
 return Luchador

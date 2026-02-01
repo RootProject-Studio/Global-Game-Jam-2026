@@ -1,4 +1,5 @@
 local Mob = require("dungeon.mobs.mob")
+local MaskManager = require("dungeon.masks.mask_manager")
 
 local Pedro = setmetatable({}, Mob)
 Pedro.__index = Pedro
@@ -38,7 +39,8 @@ function Pedro:new()
     
     -- Propriété pour le mask équipé (initialisé vide)
     obj.equippedMask = nil
-    
+    obj.maskManager = MaskManager:new()
+
     -- Propriétés pour les projectiles (système générique)
     obj.projectiles = {}  -- Liste des projectiles actifs (lasers, flèches, etc.)
     
@@ -113,23 +115,24 @@ function Pedro:update(dt, roomContext)
     -- Mettre à jour les projectiles
     self:updateProjectiles(dt)
     
-    -- Mettre à jour le mask équipé
-    if self.equippedMask and self.equippedMask.update then
-        self.equippedMask:update(dt, self)
+    -- Mettre à jour les masques actifs
+    for i, mask in ipairs(self.maskManager.slots) do
+        if mask and mask.update then
+            mask:update(dt, self)
+        end
     end
+
 end
 
 function Pedro:shoot(dirX, dirY, roomContext)
-    -- Déléguer le tir au mask équipé
-    if not self.equippedMask then
-        return
-    end
-    
-    -- Si le mask a une méthode shoot, l'utiliser
-    if self.equippedMask.shoot then
-        return self.equippedMask:shoot(self, dirX, dirY, roomContext)
+    for i, mask in ipairs(self.maskManager.slots) do
+        if mask and mask.shoot then
+            mask:shoot(self, dirX, dirY, roomContext)
+        end
     end
 end
+
+
 
 function Pedro:addProjectile(projectile)
     -- Ajouter un projectile à la liste (utilisé par les masks)
@@ -819,21 +822,24 @@ function Pedro:isCollidingWithRect(rx, ry, rw, rh)
     return self:isCollidingWithPoint(closestX, closestY)
 end
 
-function Pedro:equipMask(mask)
-    -- Équiper un mask
-    self.equippedMask = mask
+-- Équiper un masque dans un slot précis (1 ou 2)
+function Pedro:equipMask(mask, slot)
+    self.maskManager:equip(mask, slot)
     if mask and mask.onEquip then
         mask:onEquip(self)
     end
 end
 
-function Pedro:unequipMask()
-    -- Déséquiper le mask actuel
-    if self.equippedMask and self.equippedMask.onUnequip then
-        self.equippedMask:onUnequip(self)
+-- Déséquiper
+function Pedro:unequipMask(slot)
+    local mask = self.maskManager:getSlot(slot)
+    if mask and mask.onUnequip then
+        mask:onUnequip(self)
     end
-    self.equippedMask = nil
+    self.maskManager:unequip(slot)
 end
+
+
 
 function Pedro:getMaskDamageBonus()
     -- Retourner les dégâts bonus du mask équipé
