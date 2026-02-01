@@ -1,3 +1,2 @@
 Fondu d'entrée: music/menu.ogg
 Fondu d'entrée: music/a_boss.ogg
-Fondu d'entrée: music/a_boss.ogg
