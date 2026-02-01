@@ -362,7 +362,7 @@ function GameState:draw()
     local fontSize = math.max(12, 12 * scale)
     love.graphics.setNewFont(fontSize)
     local padding = 20 * scale
-    love.graphics.print("P: debug | M: carte | R: regener | Echap: menu", padding, _G.gameConfig.windowHeight - padding - 10)
+    love.graphics.print("P: debug | M: carte | R: F5 | Echap: menu", padding, _G.gameConfig.windowHeight - padding - 10)
 end
 
 function GameState:drawDebugInfo()

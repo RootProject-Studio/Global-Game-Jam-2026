@@ -802,7 +802,7 @@ function Pedro:draw()
         local height = 15 * scale
         local margin = 20 * scale
 
-        local x0 = _G.gameConfig.windowWidth - width - margin - 100
+        local x0 = _G.gameConfig.windowWidth - width - margin - 50
         local y0 = _G.gameConfig.windowHeight - height - margin
 
         -- Fond rouge
