@@ -24,7 +24,14 @@ function MaskItem:loadSprite()
     local spritePath = {
         cyclope = "dungeon/masks/assets/cyclope.png",
         ffp2 = "dungeon/masks/assets/ffp2.png",
-        scream = "dungeon/masks/assets/scream.png"
+        scream = "dungeon/masks/assets/scream.png",
+        anonymous = "dungeon/masks/assets/anonymous.png",
+        anubis = "dungeon/masks/assets/anubis.png",
+        hydre = "dungeon/masks/assets/hydre.png",
+        luchador = "dungeon/masks/assets/luchador.png",
+        magrit = "dungeon/masks/assets/magrit.png",
+        paladin = "dungeon/masks/assets/paladin.png",
+        plague = "dungeon/masks/assets/plague.png",
     }
     
     local path = spritePath[self.maskType]

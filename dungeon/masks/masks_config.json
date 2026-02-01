@@ -24,12 +24,12 @@
   "Ffp2": {
     "name": "FFP2",
     "attackType": "distance",
-    "damage": 30,
+    "damage": -5,
     "cooldown": 12,
     "damageMultiplier": 1.3,
     "rayLength": 200,
     "rayWidth": 20,
-    "shootCooldown": 1.5,
+    "shootCooldown": 0.25,
     "rayDuration": 0.4
   },
   "TheMask": {

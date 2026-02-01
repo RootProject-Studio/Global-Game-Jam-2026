@@ -42,7 +42,7 @@ end
 function Mob:onDeath()
     -- Chance de drop
     if math.random() < self.dropChance then
-        local masks = {"cyclope", "ffp2", "scream"}
+        local masks = {"cyclope", "ffp2", "scream", "hydre", "luchador", "magrit", "anubis", "anonymous", "paladin", "plague"}
         local randomMask = masks[math.random(#masks)]
         
         -- Créer l'item au centre du mob

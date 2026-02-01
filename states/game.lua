@@ -9,7 +9,13 @@ local Cyclope          = require("dungeon.masks.cyclope")
 local Ffp2 = require("dungeon.masks.ffp2")
 local Scream           = require("dungeon.masks.scream")
 local AudioManager     = require("audio_manager")
-
+local Anubis = require("dungeon.masks.anubis")
+local Plague = require("dungeon.masks.plague_doctor")
+local Paladin = require("dungeon.masks.paladin")
+local Hydre = require("dungeon.masks.hydre")
+local Magrit = require("dungeon.masks.magrit")
+local Anonymous =require("dungeon.masks.anonymous")
+local Luchador =require("dungeon.masks.luchador")
 function GameState:enter()
     -- Jouer la musique du jeu avec transition fluide
     -- Si une musique joue (du menu), elle fera un fondu vers la nouvelle
@@ -19,9 +25,14 @@ function GameState:enter()
     local cyclope = Cyclope:new()
     local ffp2 = Ffp2:new()
     local scream = Scream:new()
-    self.player:equipMask(cyclope)
-
-    self.items = {}
+    local anubis = Anubis:new()
+    local plague = Plague:new()
+    local paladin = Paladin:new()
+    local hydre = Hydre:new()
+    local magrit = Magrit:new()
+    local anonymous = Anonymous:new()
+    local luchador = Luchador:new()
+    self.player:equipMask(ffp2)
 
     -- Générer un nouveau donjon
     if not DungeonGenerator then
@@ -104,6 +115,7 @@ function GameState:updateLayout()
 end
 
 function GameState:update(dt)
+    if not self.currentRoom then return end
 
     if self.player
         and self.player.maskManager
@@ -182,8 +194,13 @@ function GameState:update(dt)
     -- Update des mobs
     self:updateMobs(dt)
 
+    -- Initialiser les items de la salle s'ils n'existent pas
+    if not self.currentRoom.items then
+        self.currentRoom.items = {}
+    end
+
     -- Update items
-    for _, item in ipairs(self.items) do
+    for _, item in ipairs(self.currentRoom.items) do
         item:update(dt)
     end
 
@@ -191,10 +208,10 @@ function GameState:update(dt)
     self:checkItemCollisions()
 
     -- Remove collected items
-    local i = #self.items
+    local i = #self.currentRoom.items
     while i >= 1 do
-        if self.items[i]:isDead() then
-            table.remove(self.items, i)
+        if self.currentRoom.items[i]:isDead() then
+            table.remove(self.currentRoom.items, i)
         end
         i = i - 1
     end
@@ -235,14 +252,16 @@ function GameState:draw()
         end
     end
 
-    for _, item in ipairs(self.items) do
-        item:draw({
-            roomX = self.roomX,
-            roomY = self.roomY,
-            roomWidth = self.roomWidth,
-            roomHeight = self.roomHeight,
-            scale = _G.gameConfig.scaleX or 1
-        })
+    if self.currentRoom and self.currentRoom.items then
+        for _, item in ipairs(self.currentRoom.items) do
+            item:draw({
+                roomX = self.roomX,
+                roomY = self.roomY,
+                roomWidth = self.roomWidth,
+                roomHeight = self.roomHeight,
+                scale = _G.gameConfig.scaleX or 1
+            })
+        end
     end
 
     
@@ -589,7 +608,11 @@ function GameState:updateMobs(dt)
             -- Récupérer l'item droppé avant de supprimer le mob
             local droppedItem = self.currentRoom.mobs[i]:onDeath()
             if droppedItem then
-                table.insert(self.items, droppedItem)
+                -- Ajouter l'item à la salle actuelle au lieu de self.items
+                if not self.currentRoom.items then
+                    self.currentRoom.items = {}
+                end
+                table.insert(self.currentRoom.items, droppedItem)
             end
             table.remove(self.currentRoom.mobs, i)
         end
@@ -690,12 +713,12 @@ function GameState:updateMobs(dt)
 end
 
 function GameState:checkItemCollisions()
-    if not self.player or #self.items == 0 then return end
-    
+    if not self.player or not self.currentRoom.items or #self.currentRoom.items == 0 then return end
+        
     local scale = _G.gameConfig.scaleX or 1
     local playerRadius = self.player.size or 8
     
-    for _, item in ipairs(self.items) do
+    for _, item in ipairs(self.currentRoom.items) do
         local itemPos = item:getAbsolutePos({
             roomX = self.roomX,
             roomY = self.roomY,
@@ -750,15 +773,62 @@ function GameState:createMaskFromType(maskType)
 end
 
 
-function GameState:equipMaskFromItem(maskType)
+
+function GameState:createMaskFromType(maskType)
     local Cyclope = require("dungeon.masks.cyclope")
     local Ffp2 = require("dungeon.masks.ffp2")
-    local Scream = require("dungeon.masks.scream")
+    local Scream           = require("dungeon.masks.scream")
+    local Anubis = require("dungeon.masks.anubis")
+    local Plague = require("dungeon.masks.plague_doctor")
+    local Paladin = require("dungeon.masks.paladin")
+    local Hydre = require("dungeon.masks.hydre")
+    local Magrit = require("dungeon.masks.magrit")
+    local Anonymous =require("dungeon.masks.anonymous")
+    local Luchador =require("dungeon.masks.luchador")
     
     local maskClass = {
         cyclope = Cyclope,
         ffp2 = Ffp2,
-        scream = Scream
+        scream = Scream,
+        anubis = Anubis,
+        plague = Plague,
+        paladin = paladin,
+        hydre = Hydre,
+        magrit = Magrit,
+        anonymous = Anonymous,
+        luchador = Luchador
+    }
+    
+    if maskClass[maskType] then
+        return maskClass[maskType]:new()
+    end
+    return nil
+end
+
+
+function GameState:equipMaskFromItem(maskType)
+    local Cyclope = require("dungeon.masks.cyclope")
+    local Ffp2 = require("dungeon.masks.ffp2")
+    local Scream           = require("dungeon.masks.scream")
+    local Anubis = require("dungeon.masks.anubis")
+    local Plague = require("dungeon.masks.plague_doctor")
+    local Paladin = require("dungeon.masks.paladin")
+    local Hydre = require("dungeon.masks.hydre")
+    local Magrit = require("dungeon.masks.magrit")
+    local Anonymous =require("dungeon.masks.anonymous")
+    local Luchador =require("dungeon.masks.luchador")
+    
+    local maskClass = {
+        cyclope = Cyclope,
+        ffp2 = Ffp2,
+        scream = Scream,
+        anubis = Anubis,
+        plague = Plague,
+        paladin = paladin,
+        hydre = Hydre,
+        magrit = Magrit,
+        anonymous = Anonymous,
+        luchador = Luchador
     }
     
     if maskClass[maskType] then
