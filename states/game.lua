@@ -741,7 +741,14 @@ function GameState:checkItemCollisions()
             local maskClass = {
                 cyclope = Cyclope,
                 ffp2 = Ffp2,
-                scream = Scream
+                scream = Scream,
+                anubis = Anubis,
+                plague = Plague,
+                paladin = paladin,
+                hydre = Hydre,
+                magrit = Magrit,
+                anonymous = Anonymous,
+                luchador = Luchador
             }
             
             if maskClass[item.maskType] then

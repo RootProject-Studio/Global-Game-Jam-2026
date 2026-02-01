@@ -119,4 +119,22 @@ end
 function PlagueDoctor:effect()
 end
 
+function PlagueDoctor:getInfo()
+    return {
+        name = self.name,
+        attackType = self.attackType,
+        damage = self.damage,
+        auraRadius = self.auraRadius,
+        auraDuration = self.auraDuration,
+        auraTickRate = self.auraTickRate,
+        shootCooldown = self.shootCooldown,
+        auraActive = self.auraActive,
+        auraTimer = self.auraTimer,
+
+        imagePath = "dungeon/masks/assets/plague.png",  -- chemin vers l'image du masque
+        description = "Crée une aura de poison autour du joueur infligeant des dégâts continus aux ennemis proches" -- courte description
+    }
+end
+
+
 return PlagueDoctor

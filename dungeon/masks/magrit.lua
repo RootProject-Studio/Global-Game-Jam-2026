@@ -115,4 +115,21 @@ end
 function Magrit:effect()
 end
 
+function Magrit:getInfo()
+    return {
+        name = self.name,
+        attackType = self.attackType,
+        damage = self.damage,
+        projCount = self.projCount,
+        warningDuration = self.warningDuration,
+        impactRadius = self.impactRadius,
+        projDelay = self.projDelay,
+        shootCooldown = self.shootCooldown,
+
+        imagePath = "dungeon/masks/assets/magrit.png",  -- chemin vers l'image du masque
+        description = "Fait tomber plusieurs projectiles depuis les airs, avec un cercle de prévision avant l'impact" -- courte description
+    }
+end
+
+
 return Magrit
