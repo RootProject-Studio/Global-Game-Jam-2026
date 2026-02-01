@@ -109,4 +109,22 @@ end
 function Scream:effect()
 end
 
+function Scream:getInfo()
+    return {
+        name = self.name,
+        attackType = self.attackType,
+        damage = self.damage,
+        rayLength = self.rayLength,
+        rayWidth = self.rayWidth,
+        shootCooldown = self.shootCooldown,
+        rayDuration = self.rayDuration,
+        rayActive = self.rayActive,
+
+        imagePath = "dungeon/masks/assets/scream.png",  -- chemin vers l'image du masque
+        description = "Un masque qui te permet de donner des petit coup de couteau droit dans tes ennemis." -- courte description
+
+    }
+end
+
+
 return Scream

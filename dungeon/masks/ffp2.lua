@@ -108,6 +108,23 @@ function Ffp2:shoot(player, dirX, dirY, roomContext)
     return true
 end
 
+function Ffp2:getInfo()
+    return {
+        name = self.name,
+        attackType = self.attackType,
+        damage = self.damage,
+        -- Propriétés du rayon
+        rayLength = self.rayLength,
+        rayWidth = self.rayWidth,
+        shootCooldown = self.shootCooldown,
+        rayDuration = self.rayDuration,
+        rayActive = self.rayActive,
+
+        imagePath = "dungeon/masks/assets/ffp2.png",  -- chemin vers l'image du masque
+        description = "Un masque qui tire des petits rayon laser" -- courte description
+    }
+end
+
 function Ffp2:effect()
 end
 

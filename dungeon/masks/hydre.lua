@@ -116,4 +116,22 @@ end
 function Hydra:effect()
 end
 
+function Hydra:getInfo()
+    return {
+        name = self.name,
+        attackType = self.attackType,
+        damage = self.damage,
+        projectileCount = self.projectileCount,
+        spreadAngle = self.spreadAngle,
+        projectileSpeed = self.projectileSpeed,
+        projectileRange = self.projectileRange,
+        projectileSize = self.projectileSize,
+        shootCooldown = self.shootCooldown,
+
+        imagePath = "dungeon/masks/assets/hydre.png",  -- chemin vers l'image du masque
+        description = "Tire plusieurs projectiles en éventail pour toucher plusieurs ennemis à la fois" -- courte description
+    }
+end
+
+
 return Hydra

@@ -116,4 +116,25 @@ end
 function Cyclope:effect()
 end
 
+function Cyclope:getInfo()
+    return {
+        name = self.name,
+        attackType = self.attackType,
+        damage = self.damage,
+        damageMultiplier = self.damageMultiplier,
+        rayLength = self.rayLength,
+        rayWidth = self.rayWidth,
+        shootCooldown = self.shootCooldown,
+        rayDuration = self.rayDuration,
+        rayActive = self.rayActive,
+
+        -- Pour l'inventaire
+        imagePath = "dungeon/masks/assets/cyclope.png",  -- chemin vers l'image du masque
+        description = "Un masque qui tire un rayon laser puissant sur ses ennemis." -- courte description
+    }
+end
+
+
+
+
 return Cyclope

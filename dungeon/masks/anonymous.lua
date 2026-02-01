@@ -141,4 +141,20 @@ end
 function Anonymous:effect()
 end
 
+function Anonymous:getInfo()
+    return {
+        name = self.name,
+        attackType = self.attackType,
+        damage = self.damage,
+        explosionRadius = self.explosionRadius,
+        invincibilityDuration = self.invincibilityDuration,
+        explosionDuration = self.explosionDuration,
+        shootCooldown = self.shootCooldown,
+
+        imagePath = "dungeon/masks/assets/anonymous.png",  -- chemin vers l'image du masque
+        description = "Se téléporte en laissant des explosions et devient invincible pendant un court instant" -- courte description
+    }
+end
+
+
 return Anonymous

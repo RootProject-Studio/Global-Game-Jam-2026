@@ -111,4 +111,22 @@ end
 function Anubis:effect()
 end
 
+function Anubis:getInfo()
+    return {
+        name = self.name,
+        attackType = self.attackType,
+        damage = self.damage,
+        orbCount = self.orbCount,
+        orbitRadius = self.orbitRadius,
+        orbitSpeed = self.orbitSpeed,
+        orbDuration = self.orbDuration,
+        orbRadius = self.orbRadius,
+        shootCooldown = self.shootCooldown,
+
+        imagePath = "dungeon/masks/assets/anubis.png",  -- chemin vers l'image du masque
+        description = "Invoque des orbes orbitant autour de toi pour infliger des dégâts aux ennemis" -- courte description
+    }
+end
+
+
 return Anubis
