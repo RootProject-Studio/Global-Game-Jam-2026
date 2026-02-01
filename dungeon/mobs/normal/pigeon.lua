@@ -9,8 +9,8 @@ function Pigeon:new(data)
     data.category = "normal"
     data.subtype  = "pigeon"
     data.size     = data.size or 14
-    data.speed    = data.speed or 90
-    data.maxHP = data.maxHP or 5  -- PV max
+    data.speed    = data.speed or 150
+    data.maxHP = data.maxHP or 15  -- PV max
 
     local m = Mob.new(self, data)
 
