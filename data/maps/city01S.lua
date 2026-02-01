@@ -47,6 +47,36 @@ return {
       name = "AutoMap Rules",
       firstgid = 1981,
       filename = ":/automap-tiles.tsx"
+    },
+    {
+      name = "Lo_bit_city_set",
+      firstgid = 1986,
+      class = "",
+      tilewidth = 16,
+      tileheight = 16,
+      spacing = 0,
+      margin = 0,
+      columns = 60,
+      image = "../../assets/LO BIT CITY/Lo_bit_city_set.png",
+      imagewidth = 960,
+      imageheight = 540,
+      transparentcolor = "#ff04d4",
+      objectalignment = "unspecified",
+      tilerendersize = "tile",
+      fillmode = "stretch",
+      tileoffset = {
+        x = 0,
+        y = 0
+      },
+      grid = {
+        orientation = "orthogonal",
+        width = 16,
+        height = 16
+      },
+      properties = {},
+      wangsets = {},
+      tilecount = 1980,
+      tiles = {}
     }
   },
   layers = {

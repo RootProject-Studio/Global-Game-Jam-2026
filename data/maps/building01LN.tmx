@@ -3,9 +3,15 @@
  <properties>
   <property name="collidable" type="bool" value="true"/>
  </properties>
- <tileset firstgid="1" source="tileset_modern_rpg_background.tsx"/>
- <tileset firstgid="257" source="tileset_modern_rpg_furniture.tsx"/>
- <tileset firstgid="513" source="tileset_modern_rpg_props.tsx"/>
+ <tileset firstgid="1" name="tileset_modern_rpg_background" tilewidth="16" tileheight="16" tilecount="256" columns="16">
+  <image source="../../assets/Dark City 16x16 Tileset/tileset_modern_rpg_background.png" width="256" height="256"/>
+ </tileset>
+ <tileset firstgid="257" name="tileset_modern_rpg_furniture" tilewidth="16" tileheight="16" tilecount="256" columns="16">
+  <image source="../../assets/Dark City 16x16 Tileset/tileset_modern_rpg_furniture.png" width="256" height="256"/>
+ </tileset>
+ <tileset firstgid="513" name="tileset_modern_rpg_props" tilewidth="16" tileheight="16" tilecount="256" columns="16">
+  <image source="../../assets/Dark City 16x16 Tileset/tileset_modern_rpg_props.png" width="256" height="256"/>
+ </tileset>
  <layer id="1" name="terrain" width="20" height="20">
   <data encoding="csv">
 86,41,57,57,42,42,57,2684354601,86,86,86,86,57,57,57,57,57,57,57,2684354601,
