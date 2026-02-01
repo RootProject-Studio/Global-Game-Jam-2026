@@ -93,6 +93,19 @@ function Medic:shoot(player, dirX, dirY, roomContext)
     return true
 end
 
+function Medic:getInfo()
+    return {
+        name = self.name,
+        attackType = self.attackType,
+        healAmount = self.healAmount,
+        healDuration = self.healDuration,
+        shootCooldown = self.shootCooldown,
+
+        imagePath = "dungeon/masks/assets/medic.png",
+        description = "Soin instantané pour le joueur. Crée un effet visuel de soin autour du personnage."
+    }
+end
+
 function Medic:effect()
 end
 

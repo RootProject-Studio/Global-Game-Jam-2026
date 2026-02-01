@@ -362,7 +362,7 @@ function GameState:draw()
     local fontSize = math.max(12, 12 * scale)
     love.graphics.setNewFont(fontSize)
     local padding = 20 * scale
-    love.graphics.print("P: debug | M: carte | R: F5 | Echap: menu", padding, _G.gameConfig.windowHeight - padding - 10)
+    love.graphics.print("P: debug | M: carte | F5 : Régénerer | Echap: menu", padding, _G.gameConfig.windowHeight - padding - 10)
 end
 
 function GameState:drawDebugInfo()
@@ -842,7 +842,8 @@ function GameState:checkItemCollisions()
                 hydre = Hydre,
                 magrit = Magrit,
                 anonymous = Anonymous,
-                luchador = Luchador
+                luchador = Luchador,
+                medic = Medic
             }
             
             if maskClass[item.maskType] then
@@ -954,7 +955,7 @@ function GameState:drawMaskPickup()
     -- Aide contrôles
     love.graphics.setColor(1,1,1)
     love.graphics.printf(
-        "<- | -> Choisir slot   |   Entrée : équiper   |   Backspace : drop",
+        "<- | -> Choisir slot   |   Entrée : équiper   |   Backspace ou Sup : drop",
         0,
         screenH - 40*scale,
         screenW,
@@ -1120,7 +1121,7 @@ function GameState:drawMaskInventoryNormal()
     -- Aide contrôles
     love.graphics.setColor(1,1,1)
     love.graphics.printf(
-        "<- | -> Choisir slot   | Backspace : drop",
+        "<- | -> Choisir slot   | Backspace ou Sup : drop",
         0,
         screenH - 40*scale,
         screenW,
