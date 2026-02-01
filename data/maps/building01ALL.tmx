@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="20" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
+ <properties>
+  <property name="collidable" type="bool" value="true"/>
+ </properties>
  <tileset firstgid="1" source="tileset_modern_rpg_background.tsx"/>
  <tileset firstgid="257" source="tileset_modern_rpg_furniture.tsx"/>
  <tileset firstgid="513" source="tileset_modern_rpg_props.tsx"/>
@@ -27,7 +30,7 @@
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 </data>
  </layer>
- <layer id="1" name="terrain" width="20" height="20" visible="0">
+ <layer id="1" name="terrain" width="20" height="20">
   <data encoding="csv">
 86,41,57,57,42,42,57,2684354601,86,86,86,86,57,57,57,57,57,57,57,2684354601,
 86,57,57,57,57,57,57,57,86,2147483976,328,86,57,57,58,57,57,45,57,57,
@@ -51,7 +54,7 @@
 53,53,53,53,53,53,53,53,86,14,15,86,53,53,53,53,53,53,53,53
 </data>
  </layer>
- <layer id="2" name="upper" width="20" height="20" visible="0">
+ <layer id="2" name="upper" width="20" height="20">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,41,0,0,0,0,0,0,86,
 0,0,0,324,324,0,0,0,0,0,0,0,324,0,0,0,324,0,0,86,
@@ -75,7 +78,7 @@
 0,0,0,340,0,0,0,340,0,2147483992,344,0,340,0,0,0,340,0,0,0
 </data>
  </layer>
- <layer id="3" name="upper second" width="20" height="20" visible="0">
+ <layer id="3" name="upper second" width="20" height="20">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,397,398,398,399,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

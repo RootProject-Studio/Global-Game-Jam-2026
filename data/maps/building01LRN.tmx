@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="20" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
+ <properties>
+  <property name="collidable" type="bool" value="true"/>
+ </properties>
  <tileset firstgid="1" source="tileset_modern_rpg_background.tsx"/>
  <tileset firstgid="257" source="tileset_modern_rpg_furniture.tsx"/>
  <tileset firstgid="513" source="tileset_modern_rpg_props.tsx"/>

@@ -4,6 +4,9 @@
  <tileset firstgid="257" source="tileset_modern_rpg_furniture.tsx"/>
  <tileset firstgid="513" source="tileset_modern_rpg_props.tsx"/>
  <layer id="4" name="collision" width="20" height="20">
+  <properties>
+   <property name="collidable" type="bool" value="true"/>
+  </properties>
   <data encoding="csv">
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
