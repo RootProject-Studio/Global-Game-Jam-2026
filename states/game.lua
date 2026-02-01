@@ -362,7 +362,7 @@ function GameState:draw()
     local fontSize = math.max(12, 12 * scale)
     love.graphics.setNewFont(fontSize)
     local padding = 20 * scale
-    love.graphics.print("P: debug | M: carte | R: regener | Echap: menu", padding, _G.gameConfig.windowHeight - padding - 10)
+    love.graphics.print("P: debug | M: carte | R: F5 | Echap: menu", padding, _G.gameConfig.windowHeight - padding - 10)
 end
 
 function GameState:drawDebugInfo()
@@ -626,6 +626,8 @@ function GameState:keypressed(key)
                 mm:confirmPickup(self.player)
             elseif key == "backspace" then
                 mm:cancelPickup()
+            elseif key == "up" or key == "down" then
+                self:updateMaskScroll(key)
             end
             return
         end
@@ -640,6 +642,8 @@ function GameState:keypressed(key)
             elseif key == "right" then mm:selectNext()
             elseif key == "backspace" then
                 mm:unequip(mm.selectedSlot)
+            elseif key == "up" or key == "down" then
+                self:updateMaskScroll(key)
             end
             return
         end
@@ -867,6 +871,201 @@ function GameState:drawMaskInventory()
     local mm = self.player.maskManager
     if not mm or not mm.open then return end
 
+    if mm.pickupMode then
+        self:drawMaskPickup()
+    else
+        self:drawMaskInventoryNormal()
+    end
+end
+
+function GameState:drawMaskPickup()
+    local mm = self.player.maskManager
+    local scale = _G.gameConfig.scale or 1
+    local screenW = _G.gameConfig.windowWidth
+    local screenH = _G.gameConfig.windowHeight
+
+    local slotW, slotH = 220 * scale, 300 * scale
+    local centerW, centerH = 260 * scale, 360 * scale
+    local spacing = 40 * scale
+    local y = screenH/2 - slotH/2
+
+    local centerX = screenW/2 - centerW/2
+    local leftX   = centerX - spacing - slotW
+    local rightX  = centerX + centerW + spacing
+
+    -- Fond global
+    love.graphics.setColor(0,0,0,0.85)
+    love.graphics.rectangle("fill", 0, 0, screenW, screenH)
+
+    -- ===== SLOT GAUCHE (DÉTAILLÉ) =====
+    love.graphics.setColor(0.1,0.1,0.1,0.9)
+    love.graphics.rectangle("fill", leftX, y, slotW, slotH)
+
+    if mm.slots[1] then
+        self:drawMaskDetails(
+            mm.slots[1],
+            leftX,
+            y,
+            slotW,
+            slotH,
+            mm.scrollOffset
+        )
+    else
+        love.graphics.setColor(0.6,0.6,0.6)
+        love.graphics.printf("Vide", leftX, y + slotH/2 - 10, slotW, "center")
+    end
+
+    if mm.selectedSlot == 1 then
+        love.graphics.setColor(1,1,0)
+        love.graphics.setLineWidth(3)
+        love.graphics.rectangle("line", leftX, y, slotW, slotH)
+    end
+
+    -- ===== SLOT DROIT (DÉTAILLÉ) =====
+    love.graphics.setColor(0.1,0.1,0.1,0.9)
+    love.graphics.rectangle("fill", rightX, y, slotW, slotH)
+
+    if mm.slots[2] then
+        self:drawMaskDetails(
+            mm.slots[2],
+            rightX,
+            y,
+            slotW,
+            slotH,
+            mm.scrollOffset
+        )
+    else
+        love.graphics.setColor(0.6,0.6,0.6)
+        love.graphics.printf("Vide", rightX, y + slotH/2 - 10, slotW, "center")
+    end
+
+    if mm.selectedSlot == 2 then
+        love.graphics.setColor(1,1,0)
+        love.graphics.setLineWidth(3)
+        love.graphics.rectangle("line", rightX, y, slotW, slotH)
+    end
+
+    -- ===== MASQUE RAMASSÉ (CENTRE, DÉTAILLÉ) =====
+    local mask = mm.pickingUpMask
+    if mask then
+        love.graphics.setColor(0.1,0.1,0.1,0.95)
+        love.graphics.rectangle("fill", centerX, y - 20*scale, centerW, centerH)
+
+        self:drawMaskDetails(
+            mask,
+            centerX,
+            y - 20*scale,
+            centerW,
+            centerH,
+            mm.pickupScroll
+        )
+    end
+
+    -- Aide contrôles
+    love.graphics.setColor(1,1,1)
+    love.graphics.printf(
+        "<- | -> Choisir slot   |   Entrée : équiper   |   Backspace : drop",
+        0,
+        screenH - 40*scale,
+        screenW,
+        "center"
+    )
+end
+
+function GameState:drawMaskSlot(mask, x, y, w, h, selected)
+    local scale = _G.gameConfig.scale or 1
+
+    love.graphics.setColor(0.1,0.1,0.1,0.9)
+    love.graphics.rectangle("fill", x, y, w, h)
+
+    if selected then
+        love.graphics.setColor(1,1,0)
+        love.graphics.setLineWidth(3)
+        love.graphics.rectangle("line", x, y, w, h)
+    end
+
+    if not mask or not mask.getInfo then
+        love.graphics.setColor(0.6,0.6,0.6)
+        love.graphics.printf("Vide", x, y + h/2 - 10, w, "center")
+        return
+    end
+
+    local info = mask:getInfo()
+
+    if info.imagePath then
+        local img = love.graphics.newImage(info.imagePath)
+        local imgScale = math.min(w*0.6 / img:getWidth(), h*0.4 / img:getHeight())
+        love.graphics.setColor(1,1,1)
+        love.graphics.draw(
+            img,
+            x + w/2,
+            y + h*0.3,
+            0,
+            imgScale,
+            imgScale,
+            img:getWidth()/2,
+            img:getHeight()/2
+        )
+    end
+
+    if info.name then
+        love.graphics.setColor(1,1,1)
+        love.graphics.printf(info.name, x, y + h*0.65, w, "center")
+    end
+end
+
+function GameState:drawMaskDetails(mask, x, y, w, h, scrollOffset)
+    if not mask or not mask.getInfo then return end
+    local info = mask:getInfo()
+    local scale = _G.gameConfig.scale or 1
+
+    -- Image
+    if info.imagePath then
+        local img = love.graphics.newImage(info.imagePath)
+        local imgScale = math.min(w / 2 / img:getWidth(), (h/3) / img:getHeight())
+        love.graphics.setColor(1,1,1)
+        love.graphics.draw(
+            img,
+            x + w/2,
+            y + h/6,
+            0,
+            imgScale,
+            imgScale,
+            img:getWidth()/2,
+            img:getHeight()/2
+        )
+    end
+
+    -- Description
+    if info.description then
+        love.graphics.setColor(1,1,1)
+        love.graphics.printf(info.description, x + 10, y + h/3, w - 20, "center")
+    end
+
+    -- Paramètres
+    local paramsY = y + h/2
+    local spacing = 20 * scale
+    local textHeight = h - (paramsY - y) - 10
+
+    love.graphics.setScissor(x, paramsY, w, textHeight)
+
+    local lineY = paramsY - (scrollOffset or 0)
+    for k,v in pairs(info) do
+        if k ~= "imagePath" and k ~= "description" then
+            love.graphics.print(k .. ": " .. tostring(v), x + 10, lineY)
+            lineY = lineY + spacing
+        end
+    end
+
+    love.graphics.setScissor()
+end
+
+
+function GameState:drawMaskInventoryNormal()
+    local mm = self.player.maskManager
+    if not mm or not mm.open then return end
+    local screenW = _G.gameConfig.windowWidth
+    local screenH = _G.gameConfig.windowHeight
     local scale = _G.gameConfig.scale or 1
     local width, height = 250 * scale, 350 * scale -- un peu plus petit
     local slotSpacing = 50 * scale
@@ -891,43 +1090,12 @@ function GameState:drawMaskInventory()
         end
 
         if mask then
-            -- Image
-            if mask.getInfo then
-                local info = mask:getInfo()
-                if info.imagePath then
-                    local img = love.graphics.newImage(info.imagePath)
-                    local imgScale = math.min(width / 2 / img:getWidth(), (height/3) / img:getHeight())
-                    love.graphics.setColor(1,1,1)
-                    love.graphics.draw(img, slotX + width/2, y + height/6, 0, imgScale, imgScale, img:getWidth()/2, img:getHeight()/2)
-                end
-
-                -- Description
-                if info.description then
-                    love.graphics.setColor(1,1,1)
-                    love.graphics.printf(info.description, slotX + 10, y + height/3, width - 20, "center")
-                end
-
-                -- Paramètres
-                local paramsY = y + height/2
-                local spacing = 20 * scale
-
-                -- Calculer hauteur dispo
-                local textHeight = height - (paramsY - y) - 10
-                love.graphics.setScissor(slotX, paramsY, width, textHeight)
-
-                local lineY = paramsY - (mm.scrollOffset or 0)
-                for k,v in pairs(info) do
-                    if k ~= "imagePath" and k ~= "description" then
-                        love.graphics.print(k .. ": " .. tostring(v), slotX + 10, lineY)
-                        lineY = lineY + spacing
-                    end
-                end
-                love.graphics.setScissor()
-            end
+            self:drawMaskDetails(mask, slotX, y, width, height, mm.scrollOffset)
         else
             love.graphics.setColor(0.5,0.5,0.5)
             love.graphics.print("Vide", slotX + width/2 - 20, y + height/2)
         end
+
     end
 
     if mm.pickingUpMask then
@@ -959,10 +1127,18 @@ function GameState:drawMaskInventory()
             end
         end
     end
+    -- Aide contrôles
+    love.graphics.setColor(1,1,1)
+    love.graphics.printf(
+        "<- | -> Choisir slot   | Backspace : drop",
+        0,
+        screenH - 40*scale,
+        screenW,
+        "center"
+    )
+
 end
 
-
--- Dans ton update de GameState
 function GameState:updateMaskScroll(key)
     local mm = self.player.maskManager
     if not mm or not mm.open then return end
