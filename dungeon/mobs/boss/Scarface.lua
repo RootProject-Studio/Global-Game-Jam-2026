@@ -7,7 +7,7 @@ function Scarface:new(data)
     data.subtype  = "scarface"
     data.speed    = 0
     data.size     = 38
-    data.maxHP    = data.maxHP or 600
+    data.maxHP    = data.maxHP or 1200
 
     local m = Mob.new(self, data)
 
@@ -36,9 +36,9 @@ function Scarface:new(data)
     m.emergeHit   = false        -- true quand le dégât de remontée a été appliqué
 
     -- Dégâts
-    m.trailDamage   = 1          -- dégâts par contact traînée
-    m.emergeDamage  = 2          -- dégâts de remontée
-    m.trailHitRadius = 0.04      -- rayon de collision d'un point de traînée (relatif)
+    m.trailDamage   = 10          -- dégâts par contact traînée
+    m.emergeDamage  = 20          -- dégâts de remontée
+    m.trailHitRadius = 0.1      -- rayon de collision d'un point de traînée (relatif)
 
     m.currentFrame = 1
     m.frameTime = 0

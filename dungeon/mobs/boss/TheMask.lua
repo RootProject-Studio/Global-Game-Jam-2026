@@ -19,11 +19,11 @@ function TheMask:new(data)
     m.explosions = {}
     m.projectileTimer = 0
     m.projectileInterval = 0.25-- tirer toutes les 0.25s pendant la charge
-    m.maxHP = data.maxHP or 600
+    m.maxHP = data.maxHP or 1200
     m.hp = m.maxHP
     -- Damage settings
-    m.dashDamage = data.dashDamage or 10
-    m.explosionDamage = data.explosionDamage or 10
+    m.dashDamage = data.dashDamage or 20
+    m.explosionDamage = data.explosionDamage or 20
     m.dashHitCooldown = data.dashHitCooldown or 0.5
     m.explosionHitCooldown = data.explosionHitCooldown or 1.0
     m.dashHasHit = false
