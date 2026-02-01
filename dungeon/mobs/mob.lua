@@ -19,7 +19,7 @@ function Mob:new(data)
     m.maxHP = data.maxHP or 1        -- par défaut 1
     m.hp = m.maxHP
 
-    m.dropChance = data.dropChance or 0.3
+    m.dropChance = data.dropChance or 1
     self.droppedItem = nil
 
     return m
@@ -42,7 +42,7 @@ end
 function Mob:onDeath()
     -- Chance de drop
     if math.random() < self.dropChance then
-        local masks = {"cyclope", "ffp2", "scream"}
+        local masks = {"cyclope", "ffp2", "scream", "hydre", "luchador", "magrit", "anubis", "anonymous", "paladin", "plague"}
         local randomMask = masks[math.random(#masks)]
         
         -- Créer l'item au centre du mob
