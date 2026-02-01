@@ -30,6 +30,8 @@ function Pedro:new()
     obj.currentFrame = 1
     obj.frameTime = 0
     obj.frameDelay = 0.1
+    obj.facing = "right"  -- par défaut à droite
+
     
     -- Charger les images du joueur
     obj.image = {
@@ -75,10 +77,13 @@ function Pedro:update(dt, roomContext)
     if love.keyboard.isDown(keys.left) then
         self.vx = -self.speed
         isMoving = true
+        self.facing = "left"
     elseif love.keyboard.isDown(keys.right) then
         self.vx = self.speed
         isMoving = true
+        self.facing = "right"
     end
+
 
     if love.keyboard.isDown(keys.shoot_up) then
         self:shoot(0, -1, roomContext)  -- Tir vers le haut
@@ -787,9 +792,24 @@ function Pedro:draw()
         local img = self.image[self.currentFrame]
         local imgWidth = img:getWidth()
         local imgHeight = img:getHeight()
+
+        -- scaleX négatif si on regarde à gauche
         local scaleX = (self.hitboxRadiusX * 2) / imgWidth
+        if self.facing == "left" then
+            scaleX = -scaleX
+        end
         local scaleY = (self.hitboxRadiusY * 2) / imgHeight
-        love.graphics.draw(img, self.x, self.y, 0, scaleX, scaleY, imgWidth/2, imgHeight/2)
+
+        love.graphics.draw(
+            img,
+            self.x,
+            self.y,
+            0,          -- rotation
+            scaleX,
+            scaleY,
+            imgWidth/2,
+            imgHeight/2
+        )
     end
     
     -- Dessiner les projectiles
