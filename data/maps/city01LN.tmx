@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="20" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
+ <editorsettings>
+  <export target="city01LN.lua" format="lua"/>
+ </editorsettings>
  <tileset firstgid="1" name="Lo_bit_city_set" tilewidth="16" tileheight="16" tilecount="1980" columns="60">
   <image source="../../assets/LO BIT CITY/Lo_bit_city_set.png" trans="ff04d4" width="960" height="540"/>
  </tileset>
  <tileset firstgid="1981" source=":/automap-tiles.tsx"/>
+ <tileset firstgid="1986" name="Lo_bit_city_set" tilewidth="16" tileheight="16" tilecount="1980" columns="60">
+  <image source="../../assets/LO BIT CITY/Lo_bit_city_set.png" trans="ff04d4" width="960" height="540"/>
+ </tileset>
  <layer id="4" name="collision" width="20" height="20">
   <properties>
    <property name="collidable" type="bool" value="true"/>

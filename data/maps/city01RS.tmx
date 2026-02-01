@@ -7,6 +7,9 @@
   <image source="../../assets/LO BIT CITY/Lo_bit_city_set.png" trans="ff04d4" width="960" height="540"/>
  </tileset>
  <tileset firstgid="1981" source=":/automap-tiles.tsx"/>
+ <tileset firstgid="1986" name="Lo_bit_city_set" tilewidth="16" tileheight="16" tilecount="1980" columns="60">
+  <image source="../../assets/LO BIT CITY/Lo_bit_city_set.png" trans="ff04d4" width="960" height="540"/>
+ </tileset>
  <layer id="4" name="collision" width="20" height="20">
   <properties>
    <property name="collidable" type="bool" value="true"/>
