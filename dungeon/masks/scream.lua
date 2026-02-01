@@ -57,31 +57,26 @@ end
 
 
 function Scream:shoot(player, dirX, dirY, roomContext)
-    -- Vérifier si on peut tirer
-    if not self:canShoot() then
-        return false
-    end
-    
-    -- Vérifier que le contexte de la salle est valide
-    if not roomContext then
-        return false
-    end
-    
-    -- Calculer la position des yeux (offset depuis le centre selon la direction)
-    -- Les yeux sont décalés de 20 pixels dans la direction du tir
+    if not self:canShoot() then return false end
+    if not roomContext then return false end
+
     local eyeOffsetDistance = 20
     local eyeX = player.x + dirX * eyeOffsetDistance
     local eyeY = player.y + dirY * eyeOffsetDistance
-    
-    -- Créer un rayon laser immédiat (pas de projectile qui se déplace)
+
+    -- Pour un tir corps à corps : distance courte mais adaptable à la salle
+    local baseDistance = 50  -- distance de base du petit coup
+    local scaleFactor = math.min(roomContext.roomWidth, roomContext.roomHeight) / 800
+    local maxDistance = baseDistance * scaleFactor  -- plus grande salle → petit peu plus loin
+
     local proj = {
         x = eyeX,
         y = eyeY,
         dirX = dirX,
         dirY = dirY,
-        speed = 600,            -- vitesse de déplacement
-        distance = 0,           -- distance parcourue (commence à 0)
-        maxDistance = self.rayLength,  -- disparaît après rayLength pixels
+        speed = 300,           -- vitesse faible, juste pour “atteindre le voisin”
+        distance = 0,
+        maxDistance = maxDistance,
         radius = self.rayWidth,
         damage = 10 + self.damage,
         roomX = roomContext.roomX,
@@ -92,19 +87,16 @@ function Scream:shoot(player, dirX, dirY, roomContext)
         hitEnemies = {},
         player = player
     }
-    
-    -- Ajouter le rayon via la méthode générique
+
     player:addProjectile(proj)
-    
-    -- Réinitialiser le cooldown avec un gros délai
+
     self.shootTimer = self.shootCooldown
-    
-    -- Activer le rayon visible
     self.rayActive = true
     self.rayTimer = self.rayDuration
-    
+
     return true
 end
+
 
 function Scream:effect()
 end
