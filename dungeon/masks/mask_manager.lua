@@ -59,31 +59,32 @@ end
 
 
 function MaskManager:startPickup(mask)
-    self.pickupMode = true        -- on est en train de placer un masque
-    self.pickupMask = mask        -- le masque à placer
-    self.open = true              -- on force l'ouverture de la fenêtre
-    self.selectedSlot = 1         -- slot initial sélectionné
+    self.pickupMode = true
+    self.pickingUpMask = mask
+    self.open = true
+    self.selectedSlot = 1
 end
 
 function MaskManager:confirmPickup(player)
-    if not self.pickupMode or not self.pickupMask then return end
-    self.slots[self.selectedSlot] = self.pickupMask
-    self.pickupMask:onEquip(player)
-    
-    -- Réinitialiser l'état
-    self.pickupMask = nil
-    self.pickupMode = false
-    self.open = false   -- fermer le menu après placement
-end
+    if not self.pickupMode or not self.pickingUpMask then return end
 
+    self.slots[self.selectedSlot] = self.pickingUpMask
+    self.pickingUpMask:onEquip(player)
+
+    -- reset propre
+    self.pickingUpMask = nil
+    self.pickupMode = false
+    self.open = false
+end
 
 function MaskManager:cancelPickup()
-    if self.pickupMode and self.pickupMask then
-        self.pickupMask = nil
+    if self.pickupMode and self.pickingUpMask then
+        self.pickingUpMask = nil
         self.pickupMode = false
-        self.open = false   -- fermer le menu si on annule
+        self.open = false
     end
 end
+
 
 
 

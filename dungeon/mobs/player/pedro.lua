@@ -30,6 +30,8 @@ function Pedro:new()
     obj.currentFrame = 1
     obj.frameTime = 0
     obj.frameDelay = 0.1
+    obj.facing = "right"  -- par défaut à droite
+
     
     -- Charger les images du joueur
     obj.image = {
@@ -75,10 +77,13 @@ function Pedro:update(dt, roomContext)
     if love.keyboard.isDown(keys.left) then
         self.vx = -self.speed
         isMoving = true
+        self.facing = "left"
     elseif love.keyboard.isDown(keys.right) then
         self.vx = self.speed
         isMoving = true
+        self.facing = "right"
     end
+
 
     if love.keyboard.isDown(keys.shoot_up) then
         self:shoot(0, -1, roomContext)  -- Tir vers le haut
@@ -160,6 +165,21 @@ function Pedro:updateProjectiles(dt)
             end
             
             proj.timer = proj.timer - dt
+            if proj.timer <= 0 then
+                table.remove(self.projectiles, i)
+            else
+                i = i + 1
+            end
+        elseif proj.isHeal then
+            -- Les effets de soin suivent le joueur
+            if proj.player then
+                proj.x = proj.player.x
+                proj.y = proj.player.y
+            end
+            
+            proj.timer = proj.timer - dt
+            proj.phase = 1 - (proj.timer / 0.5)
+            
             if proj.timer <= 0 then
                 table.remove(self.projectiles, i)
             else
@@ -558,7 +578,31 @@ function Pedro:drawProjectiles()
             love.graphics.setColor(1, 1, 1, 0.6)
             love.graphics.setLineWidth((proj.width or 30) * 0.5)
             love.graphics.line(proj.x, proj.y, endX, endY)
+        elseif proj.isHeal then
+            -- Effet de soin visuel (croix verte + particules)
+            local phase = proj.phase
+            local alpha = 1 - phase
             
+            -- Croix médicale verte qui pulse
+            love.graphics.setColor(0.2, 1, 0.2, alpha * 0.9)
+            love.graphics.setLineWidth(10)
+            local crossSize = 25 + phase * 15
+            love.graphics.line(proj.x - crossSize, proj.y, proj.x + crossSize, proj.y)
+            love.graphics.line(proj.x, proj.y - crossSize, proj.x, proj.y + crossSize)
+            
+            -- Particules de soin qui montent
+            love.graphics.setColor(0.5, 1, 0.5, alpha)
+            for i = 1, 8 do
+                local angle = (i / 8) * math.pi * 2
+                local radius = 40 + phase * 30
+                local py = proj.y - phase * 40  -- Monte vers le haut
+                local px = proj.x + math.cos(angle) * radius * (1 - phase)
+                love.graphics.circle("fill", px, py, 5 * (1 - phase))
+            end
+            
+            -- Cercle de soin qui s'étend
+            love.graphics.setColor(0.3, 1, 0.3, alpha * 0.4)
+            love.graphics.circle("fill", proj.x, proj.y, 50 * phase)    
         elseif proj.isExplosion then
             -- Explosion avec effet de glitch digital
             local phase = proj.phase
@@ -748,9 +792,24 @@ function Pedro:draw()
         local img = self.image[self.currentFrame]
         local imgWidth = img:getWidth()
         local imgHeight = img:getHeight()
+
+        -- scaleX négatif si on regarde à gauche
         local scaleX = (self.hitboxRadiusX * 2) / imgWidth
+        if self.facing == "left" then
+            scaleX = -scaleX
+        end
         local scaleY = (self.hitboxRadiusY * 2) / imgHeight
-        love.graphics.draw(img, self.x, self.y, 0, scaleX, scaleY, imgWidth/2, imgHeight/2)
+
+        love.graphics.draw(
+            img,
+            self.x,
+            self.y,
+            0,          -- rotation
+            scaleX,
+            scaleY,
+            imgWidth/2,
+            imgHeight/2
+        )
     end
     
     -- Dessiner les projectiles
@@ -763,7 +822,7 @@ function Pedro:draw()
         local height = 15 * scale
         local margin = 20 * scale
 
-        local x0 = _G.gameConfig.windowWidth - width - margin - 100
+        local x0 = _G.gameConfig.windowWidth - width - margin - 50
         local y0 = _G.gameConfig.windowHeight - height - margin
 
         -- Fond rouge

@@ -16,11 +16,13 @@ local Hydre = require("dungeon.masks.hydre")
 local Magrit = require("dungeon.masks.magrit")
 local Anonymous =require("dungeon.masks.anonymous")
 local Luchador =require("dungeon.masks.luchador")
+local Fire = require("dungeon.masks.fire")
+local Medic =require("dungeon.masks.medic")
 function GameState:enter()
     -- Jouer la musique du jeu avec transition fluide
-    -- Si une musique joue (du menu), elle fera un fondu vers la nouvelle
     AudioManager:fadeInMusic("music/a_boss.ogg", 1.0, 0.5)
 
+    -- Initialisation du joueur (une seule fois)
     self.player = Pedro:new()
     local cyclope = Cyclope:new()
     local ffp2 = Ffp2:new()
@@ -32,35 +34,15 @@ function GameState:enter()
     local magrit = Magrit:new()
     local anonymous = Anonymous:new()
     local luchador = Luchador:new()
-    self.player:equipMask(ffp2)
+    local fire = Fire:new()
+    local medic = Medic:new()
+    self.player:equipMask(scream)
 
-    -- Générer un nouveau donjon
-    if not DungeonGenerator then
-        io.stderr:write("ERREUR: DungeonGenerator non trouvé!\n")
-        self.currentRoom = nil
-        self.dungeon = {}
-        self:updateLayout()
-        return
-    end
-    
-    self.generator = DungeonGenerator:new()
-    self.dungeon = self.generator:generate()
-    self.generator:populateRooms()
-    
-    -- Trouver la salle de départ
-    self.currentRoom = nil
-    if self.dungeon then
-        for _, room in ipairs(self.dungeon) do
-            if room.type == DungeonGenerator.ROOM_TYPES.START then
-                self.currentRoom = room
-                break
-            end
-        end
-    end
-    
-    if not self.currentRoom then
-        io.stderr:write("ERREUR: Salle de départ non trouvée!\n")
-    end
+    self.items = {}
+
+    -- Système de niveaux (persistant)
+    self.currentLevel = 1
+    self.defeatedBosses = {}
     
     -- Valeurs de base (résolution 800x600)
     self.baseWidth = 800
@@ -83,7 +65,52 @@ function GameState:enter()
     -- Mode debugging
     self.debugMode = false
     
+    -- Générer le premier donjon
+    self:generateNewLevel()
+    
     self:updateLayout()
+end
+
+function GameState:generateNewLevel()
+    -- Générer un nouveau donjon (appelé à chaque niveau)
+    if not DungeonGenerator then
+        io.stderr:write("ERREUR: DungeonGenerator non trouvé!\n")
+        self.currentRoom = nil
+        self.dungeon = {}
+        return
+    end
+    
+    self.generator = DungeonGenerator:new()
+    self.dungeon = self.generator:generate()
+    self.generator:populateRooms(self.defeatedBosses)
+    
+    -- Trouver la salle de départ
+    self.currentRoom = nil
+    if self.dungeon then
+        for _, room in ipairs(self.dungeon) do
+            if room.type == DungeonGenerator.ROOM_TYPES.START then
+                self.currentRoom = room
+                break
+            end
+        end
+    end
+    
+    if not self.currentRoom then
+        io.stderr:write("ERREUR: Salle de départ non trouvée!\n")
+    end
+    
+    -- Réinitialiser la position du joueur au centre de la salle de départ
+    local scale = math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+    local roomWidth = self.baseRoomWidth * scale
+    local roomHeight = self.baseRoomHeight * scale
+    local roomX = (_G.gameConfig.windowWidth - roomWidth) / 2
+    local roomY = (_G.gameConfig.windowHeight - roomHeight) / 2
+    
+    self.player.x = roomX + roomWidth / 2
+    self.player.y = roomY + roomHeight / 2
+    
+    -- Nettoyer les projectiles
+    self.player.projectiles = {}
 end
 
 function GameState:updateLayout()
@@ -142,6 +169,51 @@ function GameState:update(dt)
     local playerX = self.player.x
     local playerY = self.player.y
     
+
+    local roomCleared = true
+    if self.currentRoom.mobs and #self.currentRoom.mobs > 0 then
+        roomCleared = false
+    end
+
+    -- Vérifier si le boss est vaincu et créer la porte de niveau
+    if self.currentRoom.type == DungeonGenerator.ROOM_TYPES.BOSS then
+        -- Activer la porte de niveau si le boss est vaincu
+        if roomCleared and not self.currentRoom.levelDoorActive then
+            self.currentRoom.levelDoorActive = true
+            
+            -- Sauvegarder le boss vaincu
+            if self.currentRoom.bossType then
+                local alreadySaved = false
+                for _, defeatedBoss in ipairs(self.defeatedBosses) do
+                    if defeatedBoss == self.currentRoom.bossType then
+                        alreadySaved = true
+                        break
+                    end
+                end
+                if not alreadySaved then
+                    table.insert(self.defeatedBosses, self.currentRoom.bossType)
+                end
+            end
+        end
+        
+        -- Vérifier collision avec la porte de niveau
+        if self.currentRoom.levelDoorActive then
+            local doorX = self.roomX + self.roomWidth / 2
+            local doorY = self.roomY + self.roomHeight - 40
+            local doorWidth = 80
+            local doorHeight = 40
+            
+            if playerX > doorX - doorWidth/2 and playerX < doorX + doorWidth/2 and
+               playerY > doorY and playerY < doorY + doorHeight then
+                -- Passer au niveau suivant
+                self.currentLevel = self.currentLevel + 1
+                self:generateNewLevel()
+                return
+            end
+        end
+    end
+
+
     -- Porte du haut
     if self.currentRoom.doors.top and playerY < self.roomY + doorThreshold then
         local centerX = self.roomX + self.roomWidth / 2
@@ -290,7 +362,7 @@ function GameState:draw()
     local fontSize = math.max(12, 12 * scale)
     love.graphics.setNewFont(fontSize)
     local padding = 20 * scale
-    love.graphics.print("P: debug | M: carte | R: regener | Echap: menu", padding, _G.gameConfig.windowHeight - padding - 10)
+    love.graphics.print("P: debug | M: carte | F5 : Régénerer | Echap: menu", padding, _G.gameConfig.windowHeight - padding - 10)
 end
 
 function GameState:drawDebugInfo()
@@ -434,6 +506,28 @@ function GameState:drawDoors()
         love.graphics.setColor(0.5, 0.4, 0.3)
         love.graphics.rectangle("line", self.roomX, centerRoomY - doorWidth/2, doorHeight, doorWidth)
     end
+
+      -- Porte de niveau (après boss)
+    if self.currentRoom.type == DungeonGenerator.ROOM_TYPES.BOSS and self.currentRoom.levelDoorActive then
+        local doorX = self.roomX + self.roomWidth / 2
+        local doorY = self.roomY + self.roomHeight - 40
+        local doorWidth = 80
+        local doorHeight = 40
+        
+        -- Porte dorée qui pulse
+        local pulse = 0.7 + 0.3 * math.sin(love.timer.getTime() * 3)
+        
+        -- Fond doré
+        love.graphics.setColor(1, 0.8, 0, 0.8 * pulse)
+        love.graphics.rectangle("fill", doorX - doorWidth/2, doorY, doorWidth, doorHeight, 5, 5)
+        
+        -- Contour brillant
+        love.graphics.setColor(1, 1, 0.5, pulse)
+        love.graphics.setLineWidth(4)
+        love.graphics.rectangle("line", doorX - doorWidth/2, doorY, doorWidth, doorHeight, 5, 5)
+        
+    end
+
 end
 
 function GameState:drawMiniMap()
@@ -532,6 +626,8 @@ function GameState:keypressed(key)
                 mm:confirmPickup(self.player)
             elseif key == "backspace" then
                 mm:cancelPickup()
+            elseif key == "up" or key == "down" then
+                self:updateMaskScroll(key)
             end
             return
         end
@@ -546,6 +642,8 @@ function GameState:keypressed(key)
             elseif key == "right" then mm:selectNext()
             elseif key == "backspace" then
                 mm:unequip(mm.selectedSlot)
+            elseif key == "up" or key == "down" then
+                self:updateMaskScroll(key)
             end
             return
         end
@@ -744,7 +842,8 @@ function GameState:checkItemCollisions()
                 hydre = Hydre,
                 magrit = Magrit,
                 anonymous = Anonymous,
-                luchador = Luchador
+                luchador = Luchador,
+                medic = Medic
             }
             
             if maskClass[item.maskType] then
@@ -763,6 +862,201 @@ function GameState:drawMaskInventory()
     local mm = self.player.maskManager
     if not mm or not mm.open then return end
 
+    if mm.pickupMode then
+        self:drawMaskPickup()
+    else
+        self:drawMaskInventoryNormal()
+    end
+end
+
+function GameState:drawMaskPickup()
+    local mm = self.player.maskManager
+    local scale = _G.gameConfig.scale or 1
+    local screenW = _G.gameConfig.windowWidth
+    local screenH = _G.gameConfig.windowHeight
+
+    local slotW, slotH = 220 * scale, 300 * scale
+    local centerW, centerH = 260 * scale, 360 * scale
+    local spacing = 40 * scale
+    local y = screenH/2 - slotH/2
+
+    local centerX = screenW/2 - centerW/2
+    local leftX   = centerX - spacing - slotW
+    local rightX  = centerX + centerW + spacing
+
+    -- Fond global
+    love.graphics.setColor(0,0,0,0.85)
+    love.graphics.rectangle("fill", 0, 0, screenW, screenH)
+
+    -- ===== SLOT GAUCHE (DÉTAILLÉ) =====
+    love.graphics.setColor(0.1,0.1,0.1,0.9)
+    love.graphics.rectangle("fill", leftX, y, slotW, slotH)
+
+    if mm.slots[1] then
+        self:drawMaskDetails(
+            mm.slots[1],
+            leftX,
+            y,
+            slotW,
+            slotH,
+            mm.scrollOffset
+        )
+    else
+        love.graphics.setColor(0.6,0.6,0.6)
+        love.graphics.printf("Vide", leftX, y + slotH/2 - 10, slotW, "center")
+    end
+
+    if mm.selectedSlot == 1 then
+        love.graphics.setColor(1,1,0)
+        love.graphics.setLineWidth(3)
+        love.graphics.rectangle("line", leftX, y, slotW, slotH)
+    end
+
+    -- ===== SLOT DROIT (DÉTAILLÉ) =====
+    love.graphics.setColor(0.1,0.1,0.1,0.9)
+    love.graphics.rectangle("fill", rightX, y, slotW, slotH)
+
+    if mm.slots[2] then
+        self:drawMaskDetails(
+            mm.slots[2],
+            rightX,
+            y,
+            slotW,
+            slotH,
+            mm.scrollOffset
+        )
+    else
+        love.graphics.setColor(0.6,0.6,0.6)
+        love.graphics.printf("Vide", rightX, y + slotH/2 - 10, slotW, "center")
+    end
+
+    if mm.selectedSlot == 2 then
+        love.graphics.setColor(1,1,0)
+        love.graphics.setLineWidth(3)
+        love.graphics.rectangle("line", rightX, y, slotW, slotH)
+    end
+
+    -- ===== MASQUE RAMASSÉ (CENTRE, DÉTAILLÉ) =====
+    local mask = mm.pickingUpMask
+    if mask then
+        love.graphics.setColor(0.1,0.1,0.1,0.95)
+        love.graphics.rectangle("fill", centerX, y - 20*scale, centerW, centerH)
+
+        self:drawMaskDetails(
+            mask,
+            centerX,
+            y - 20*scale,
+            centerW,
+            centerH,
+            mm.pickupScroll
+        )
+    end
+
+    -- Aide contrôles
+    love.graphics.setColor(1,1,1)
+    love.graphics.printf(
+        "<- | -> Choisir slot   |   Entrée : équiper   |   Backspace ou Sup : drop",
+        0,
+        screenH - 40*scale,
+        screenW,
+        "center"
+    )
+end
+
+function GameState:drawMaskSlot(mask, x, y, w, h, selected)
+    local scale = _G.gameConfig.scale or 1
+
+    love.graphics.setColor(0.1,0.1,0.1,0.9)
+    love.graphics.rectangle("fill", x, y, w, h)
+
+    if selected then
+        love.graphics.setColor(1,1,0)
+        love.graphics.setLineWidth(3)
+        love.graphics.rectangle("line", x, y, w, h)
+    end
+
+    if not mask or not mask.getInfo then
+        love.graphics.setColor(0.6,0.6,0.6)
+        love.graphics.printf("Vide", x, y + h/2 - 10, w, "center")
+        return
+    end
+
+    local info = mask:getInfo()
+
+    if info.imagePath then
+        local img = love.graphics.newImage(info.imagePath)
+        local imgScale = math.min(w*0.6 / img:getWidth(), h*0.4 / img:getHeight())
+        love.graphics.setColor(1,1,1)
+        love.graphics.draw(
+            img,
+            x + w/2,
+            y + h*0.3,
+            0,
+            imgScale,
+            imgScale,
+            img:getWidth()/2,
+            img:getHeight()/2
+        )
+    end
+
+    if info.name then
+        love.graphics.setColor(1,1,1)
+        love.graphics.printf(info.name, x, y + h*0.65, w, "center")
+    end
+end
+
+function GameState:drawMaskDetails(mask, x, y, w, h, scrollOffset)
+    if not mask or not mask.getInfo then return end
+    local info = mask:getInfo()
+    local scale = _G.gameConfig.scale or 1
+
+    -- Image
+    if info.imagePath then
+        local img = love.graphics.newImage(info.imagePath)
+        local imgScale = math.min(w / 2 / img:getWidth(), (h/3) / img:getHeight())
+        love.graphics.setColor(1,1,1)
+        love.graphics.draw(
+            img,
+            x + w/2,
+            y + h/6,
+            0,
+            imgScale,
+            imgScale,
+            img:getWidth()/2,
+            img:getHeight()/2
+        )
+    end
+
+    -- Description
+    if info.description then
+        love.graphics.setColor(1,1,1)
+        love.graphics.printf(info.description, x + 10, y + h/3, w - 20, "center")
+    end
+
+    -- Paramètres
+    local paramsY = y + h/2
+    local spacing = 20 * scale
+    local textHeight = h - (paramsY - y) - 10
+
+    love.graphics.setScissor(x, paramsY, w, textHeight)
+
+    local lineY = paramsY - (scrollOffset or 0)
+    for k,v in pairs(info) do
+        if k ~= "imagePath" and k ~= "description" then
+            love.graphics.print(k .. ": " .. tostring(v), x + 10, lineY)
+            lineY = lineY + spacing
+        end
+    end
+
+    love.graphics.setScissor()
+end
+
+
+function GameState:drawMaskInventoryNormal()
+    local mm = self.player.maskManager
+    if not mm or not mm.open then return end
+    local screenW = _G.gameConfig.windowWidth
+    local screenH = _G.gameConfig.windowHeight
     local scale = _G.gameConfig.scale or 1
     local width, height = 250 * scale, 350 * scale -- un peu plus petit
     local slotSpacing = 50 * scale
@@ -787,43 +1081,12 @@ function GameState:drawMaskInventory()
         end
 
         if mask then
-            -- Image
-            if mask.getInfo then
-                local info = mask:getInfo()
-                if info.imagePath then
-                    local img = love.graphics.newImage(info.imagePath)
-                    local imgScale = math.min(width / 2 / img:getWidth(), (height/3) / img:getHeight())
-                    love.graphics.setColor(1,1,1)
-                    love.graphics.draw(img, slotX + width/2, y + height/6, 0, imgScale, imgScale, img:getWidth()/2, img:getHeight()/2)
-                end
-
-                -- Description
-                if info.description then
-                    love.graphics.setColor(1,1,1)
-                    love.graphics.printf(info.description, slotX + 10, y + height/3, width - 20, "center")
-                end
-
-                -- Paramètres
-                local paramsY = y + height/2
-                local spacing = 20 * scale
-
-                -- Calculer hauteur dispo
-                local textHeight = height - (paramsY - y) - 10
-                love.graphics.setScissor(slotX, paramsY, width, textHeight)
-
-                local lineY = paramsY - (mm.scrollOffset or 0)
-                for k,v in pairs(info) do
-                    if k ~= "imagePath" and k ~= "description" then
-                        love.graphics.print(k .. ": " .. tostring(v), slotX + 10, lineY)
-                        lineY = lineY + spacing
-                    end
-                end
-                love.graphics.setScissor()
-            end
+            self:drawMaskDetails(mask, slotX, y, width, height, mm.scrollOffset)
         else
             love.graphics.setColor(0.5,0.5,0.5)
             love.graphics.print("Vide", slotX + width/2 - 20, y + height/2)
         end
+
     end
 
     if mm.pickingUpMask then
@@ -855,10 +1118,18 @@ function GameState:drawMaskInventory()
             end
         end
     end
+    -- Aide contrôles
+    love.graphics.setColor(1,1,1)
+    love.graphics.printf(
+        "<- | -> Choisir slot   | Backspace ou Sup : drop",
+        0,
+        screenH - 40*scale,
+        screenW,
+        "center"
+    )
+
 end
 
-
--- Dans ton update de GameState
 function GameState:updateMaskScroll(key)
     local mm = self.player.maskManager
     if not mm or not mm.open then return end
