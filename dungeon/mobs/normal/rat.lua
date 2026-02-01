@@ -9,7 +9,7 @@ function Rat:new(data)
     data.size = 14           -- rayon du Rat
     data.maxHP = data.maxHP or 3  -- PV max
     data.damage = data.damage or 1  -- dégâts infligés au joueur
-    data.dropChance = 0.25
+    data.dropChance = 1
     
 
     local m = Mob.new(self, data)
