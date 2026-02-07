@@ -214,8 +214,11 @@ function GameState:update(dt)
     end
 
 
+    -- Vérifier si la salle est dégagée de tous les ennemis (pour les portes normales)
+    local canExit = roomCleared or self.currentRoom.type == DungeonGenerator.ROOM_TYPES.BOSS and self.currentRoom.levelDoorActive
+    
     -- Porte du haut
-    if self.currentRoom.doors.top and playerY < self.roomY + doorThreshold then
+    if canExit and self.currentRoom.doors.top and playerY < self.roomY + doorThreshold then
         local centerX = self.roomX + self.roomWidth / 2
         if playerX > centerX - doorWidth/2 and playerX < centerX + doorWidth/2 then
             self:changeRoom(0, -1)
@@ -225,7 +228,7 @@ function GameState:update(dt)
     end
     
     -- Porte du bas
-    if self.currentRoom.doors.bottom and playerY > self.roomY + self.roomHeight - doorThreshold then
+    if canExit and self.currentRoom.doors.bottom and playerY > self.roomY + self.roomHeight - doorThreshold then
         local centerX = self.roomX + self.roomWidth / 2
         if playerX > centerX - doorWidth/2 and playerX < centerX + doorWidth/2 then
             self:changeRoom(0, 1)
@@ -235,7 +238,7 @@ function GameState:update(dt)
     end
     
     -- Porte de gauche
-    if self.currentRoom.doors.left and playerX < self.roomX + doorThreshold then
+    if canExit and self.currentRoom.doors.left and playerX < self.roomX + doorThreshold then
         local centerY = self.roomY + self.roomHeight / 2
         if playerY > centerY - doorWidth/2 and playerY < centerY + doorWidth/2 then
             self:changeRoom(-1, 0)
@@ -245,7 +248,7 @@ function GameState:update(dt)
     end
     
     -- Porte de droite
-    if self.currentRoom.doors.right and playerX > self.roomX + self.roomWidth - doorThreshold then
+    if canExit and self.currentRoom.doors.right and playerX > self.roomX + self.roomWidth - doorThreshold then
         local centerY = self.roomY + self.roomHeight / 2
         if playerY > centerY - doorWidth/2 and playerY < centerY + doorWidth/2 then
             self:changeRoom(1, 0)
