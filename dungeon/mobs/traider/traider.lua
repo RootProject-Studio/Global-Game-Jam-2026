@@ -30,6 +30,7 @@ function Traider:new(data)
     m.drawLayer = "background"
     m.ignoreCollision = true
     m.shopOpen = false
+    m.deltaShopClose = 0
     m.shopItems = {
         Paladin,
         Anonymous,
@@ -58,9 +59,18 @@ function Traider:update(dt, ctx)
     local player = ctx.player
     if not player then return end
 
-    if self:checkCollision(player, ctx) and not self.shopOpen then
+    if self:checkCollision(player, ctx) and not self.shopOpen and self.deltaShopClose == 0 then
         self.shopOpen = true
         player.isImmobile = true  -- Bloquer le joueur dès l'ouverture du shop
+    end
+
+    if love.keyboard.isDown(_G.gameConfig.keys.escape) then
+        self.shopOpen = false
+        player.isImmobile = false
+        self.deltaShopClose = 20
+    end
+    if self.deltaShopClose > 0 then
+        self.deltaShopClose = self.deltaShopClose - 1
     end
 end
 

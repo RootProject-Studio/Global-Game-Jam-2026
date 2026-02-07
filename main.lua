@@ -33,6 +33,7 @@ function love.load()
             shoot_down = "down",
             shoot_left = "left",
             shoot_right = "right",
+            escape = "escape",
         }
     }
 
