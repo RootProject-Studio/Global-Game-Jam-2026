@@ -16,6 +16,10 @@ factory.boss = {
     --brute    = require("dungeon.mobs.boss.brute"),
 }
 
+factory.shop = {
+    traider = require("dungeon.mobs.traider.traider"),
+}
+
 function factory.create(category, subtype, data)
     return factory[category][subtype]:new(data)
 end

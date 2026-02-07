@@ -148,7 +148,7 @@ function GameState:update(dt)
         and self.player.maskManager
         and self.player.maskManager.open then
             return
-        end
+    end
 
 
     -- Update du joueur (Pedro gère son propre mouvement)
@@ -650,6 +650,15 @@ function GameState:keypressed(key)
     end
 
     -- Inputs normaux du jeu
+    -- Vérifier si un shop est ouvert
+    for _, mob in ipairs(self.currentRoom.mobs) do
+        if mob.subtype == "traider" and mob.shopOpen then
+            mob:shopKeypressed(key, self.player)
+            return -- stop, le joueur ne bouge pas
+        end
+    end
+
+    -- Pas de shop ouvert : gestion normale
     if key == "escape" then
         GameStateManager:setState("menu")
     elseif key == "m" then
@@ -685,19 +694,20 @@ function GameState:updateMobs(dt)
 
     -- 1) Update each mob
     for _, mob in ipairs(self.currentRoom.mobs) do
-        mob:update(dt, {
-            roomX = roomX,
-            roomY = roomY,
-            roomWidth = roomW,
-            roomHeight = roomH,
-            playerX = self.player.x,
-            playerY = self.player.y,
-            scale = scale,
-            doors = self.currentRoom.doors,
-            player = self.player,
-            debugMode = self.debugMode
-        })
-    end
+    mob:update(dt, {
+        roomX = roomX,
+        roomY = roomY,
+        roomWidth = roomW,
+        roomHeight = roomH,
+        playerX = self.player.x,
+        playerY = self.player.y,
+        scale = scale,
+        doors = self.currentRoom.doors,
+        player = self.player,   -- ✅ ici on passe le joueur
+        debugMode = self.debugMode
+    })
+end
+
 
     -- 2) Remove dead mobs from the room
     local i = #self.currentRoom.mobs
@@ -1166,11 +1176,5 @@ function GameState:updateMaskScroll(key)
 
     
 end
-
-
-
-
-
-
 
 return GameState

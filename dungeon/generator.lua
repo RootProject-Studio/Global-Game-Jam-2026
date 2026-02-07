@@ -437,6 +437,17 @@ function DungeonGenerator:populateRooms(defeatedBosses)
                 })
             )
         end
+
+        -- SALLE SHOP → marchant au centre
+        if room.type == self.ROOM_TYPES.SHOP then
+            table.insert(room.mobs,
+                MobFactory.create("shop", "traider", {
+                    relX = 0.5,
+                    relY = 0.5,
+                    imageScale = 0.25
+                })
+            )
+        end
     end
 end
 

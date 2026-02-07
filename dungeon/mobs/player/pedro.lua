@@ -45,11 +45,21 @@ function Pedro:new()
 
     -- Propriétés pour les projectiles (système générique)
     obj.projectiles = {}  -- Liste des projectiles actifs (lasers, flèches, etc.)
+
+    obj.isImmobile = false
     
     return obj
 end
 
 function Pedro:update(dt, roomContext)
+
+    -- Bloquer le joueur si un shop est ouvert
+    if self.player
+        and self.player.maskManager
+        and self.player.maskManager.open then
+            return
+    end
+    
     -- Récupérer les touches enfoncées
     local keys = _G.gameConfig.keys
     
@@ -66,35 +76,44 @@ function Pedro:update(dt, roomContext)
     local isMoving = false
     
     -- Gestion du mouvement
-    if love.keyboard.isDown(keys.up) then
-        self.vy = -self.speed
-        isMoving = true
-    elseif love.keyboard.isDown(keys.down) then
-        self.vy = self.speed
-        isMoving = true
-    end
-    
-    if love.keyboard.isDown(keys.left) then
-        self.vx = -self.speed
-        isMoving = true
-        self.facing = "left"
-    elseif love.keyboard.isDown(keys.right) then
-        self.vx = self.speed
-        isMoving = true
-        self.facing = "right"
-    end
+    if not self.isImmobile then
+        if love.keyboard.isDown(keys.up) then
+            self.vy = -self.speed
+            isMoving = true
+        elseif love.keyboard.isDown(keys.down) then
+            self.vy = self.speed
+            isMoving = true
+        end
+        if love.keyboard.isDown(keys.left) then
+            self.vx = -self.speed
+            isMoving = true
+            self.facing = "left"
+        elseif love.keyboard.isDown(keys.right) then
+            self.vx = self.speed
+            isMoving = true
+            self.facing = "right"
+        end
 
+        -- Animation seulement si le joueur bouge
+        if isMoving then
+            self.frameTime = self.frameTime + dt
+            if self.frameTime >= self.frameDelay then
+                self.frameTime = 0
+                self.currentFrame = self.currentFrame + 1
+                if self.currentFrame > #self.image then
+                    self.currentFrame = 1
+                end
+            end
+        else
+            self.frameTime = 0
+            self.currentFrame = 1
+        end
 
-    if love.keyboard.isDown(keys.shoot_up) then
-        self:shoot(0, -1, roomContext)  -- Tir vers le haut
-    elseif love.keyboard.isDown(keys.shoot_down) then
-        self:shoot(0, 1, roomContext)   -- Tir vers le bas
-    end
-
-    if love.keyboard.isDown(keys.shoot_left) then
-        self:shoot(-1, 0, roomContext)  -- Tir vers la gauche
-    elseif love.keyboard.isDown(keys.shoot_right) then
-        self:shoot(1, 0, roomContext)   -- Tir vers la droite
+        -- Tirs
+        if love.keyboard.isDown(keys.shoot_up) then self:shoot(0, -1, roomContext) end
+        if love.keyboard.isDown(keys.shoot_down) then self:shoot(0, 1, roomContext) end
+        if love.keyboard.isDown(keys.shoot_left) then self:shoot(-1, 0, roomContext) end
+        if love.keyboard.isDown(keys.shoot_right) then self:shoot(1, 0, roomContext) end
     end
     
     -- Appliquer le mouvement
