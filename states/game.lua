@@ -214,8 +214,20 @@ function GameState:update(dt)
     end
 
 
+    -- Vérifier si la salle contient un trader
+    local hasTrader = false
+    if self.currentRoom.mobs then
+        for _, mob in ipairs(self.currentRoom.mobs) do
+            if mob.subtype == "traider" then
+                hasTrader = true
+                break
+            end
+        end
+    end
+    
     -- Vérifier si la salle est dégagée de tous les ennemis (pour les portes normales)
-    local canExit = roomCleared or self.currentRoom.type == DungeonGenerator.ROOM_TYPES.BOSS and self.currentRoom.levelDoorActive
+    -- Les salles avec trader restent toujours ouvertes
+    local canExit = roomCleared or hasTrader or (self.currentRoom.type == DungeonGenerator.ROOM_TYPES.BOSS and self.currentRoom.levelDoorActive)
     
     -- Porte du haut
     if canExit and self.currentRoom.doors.top and playerY < self.roomY + doorThreshold then
