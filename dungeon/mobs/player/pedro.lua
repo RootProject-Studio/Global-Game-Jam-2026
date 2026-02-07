@@ -43,6 +43,8 @@ function Pedro:new()
 
     -- Propriétés pour les projectiles (système générique)
     obj.projectiles = {}  -- Liste des projectiles actifs (lasers, flèches, etc.)
+
+    obj.isImmobile = false
     
     return obj
 end
@@ -73,7 +75,6 @@ function Pedro:update(dt, roomContext)
     
     -- Gestion du mouvement
     if not self.isImmobile then
-        local isMoving = false
         if love.keyboard.isDown(keys.up) then
             self.vy = -self.speed
             isMoving = true
