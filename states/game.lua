@@ -20,7 +20,8 @@ local Fire = require("dungeon.masks.fire")
 local Medic =require("dungeon.masks.medic")
 function GameState:enter()
     -- Jouer la musique du jeu avec transition fluide
-    AudioManager:fadeInMusic("music/a_boss.ogg", 1.0, 0.5)
+    self.currentMusicPath = "music/take out the trash loop - 01 Début.ogg"
+    AudioManager:fadeInMusic(self.currentMusicPath, 2.5, 0.5)
 
     -- Initialisation du joueur (une seule fois)
     self.player = Pedro:new()
@@ -623,9 +624,31 @@ function GameState:changeRoom(dx, dy)
     for _, room in ipairs(self.dungeon) do
         if room.gridX == newGridX and room.gridY == newGridY then
             self.currentRoom = room
+            self:updateRoomMusic()
             return
         end
     end
+end
+
+function GameState:updateRoomMusic()
+    if not self.currentRoom then return end
+
+    local targetMusic = "music/take out the trash loop - 01 Début.ogg"
+    if self.currentRoom.type == DungeonGenerator.ROOM_TYPES.BOSS then
+        local bossTracks = {
+            "music/burn_the_masks_loop - 02.ogg",
+            "music/going_anywhere_loop - 02.ogg",
+            "music/run_loop - 02.ogg",
+            "music/a_boss.ogg"
+        }
+        targetMusic = bossTracks[math.random(#bossTracks)]
+    elseif self.currentRoom.type == DungeonGenerator.ROOM_TYPES.SHOP then
+        targetMusic = "music/mask_shop.ogg"
+    end
+
+    if self.currentMusicPath == targetMusic then return end
+    self.currentMusicPath = targetMusic
+    AudioManager:fadeInMusic(targetMusic, 2.5, 0.5)
 end
 
 function GameState:keypressed(key)
