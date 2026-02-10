@@ -10,7 +10,7 @@ function Traider:new(data)
     data.category = "normal"
     data.subtype = "traider"
     data.speed = 0
-    data.size = 70
+    data.size = 140
     data.maxHP = 100000
     data.damage = 0
     data.dropChance = 0
@@ -55,11 +55,23 @@ function Traider:new(data)
         Anonymous,
         Medic,
     }
+    m.visualSize = 260
+    m.baseVisualSize = m.visualSize
 
 
     m.selectedItem = 1 -- Item sélectionné par défaut
 
     return m
+end
+
+function Traider:applyScale(scale)
+    if not scale then return end
+    if Mob.applyScale then
+        Mob.applyScale(self, scale)
+    end
+    if self.baseVisualSize then
+        self.visualSize = self.baseVisualSize * scale
+    end
 end
 
 -- Collision pixels
@@ -111,8 +123,9 @@ function Traider:draw(ctx)
         local img = self.image
         local imgWidth = img:getWidth()
         local imgHeight = img:getHeight()
-        local scaleX = self.size * 2 / imgWidth
-        local scaleY = self.size * 2 / imgHeight
+        local targetSize = self.visualSize or (self.size * 2)
+        local scaleX = targetSize / imgWidth
+        local scaleY = targetSize / imgHeight
         love.graphics.draw(img, x, y, 0, scaleX, scaleY, imgWidth/2, imgHeight/2)
     end
 
@@ -122,10 +135,11 @@ function Traider:draw(ctx)
 end
 
 function Traider:drawShop()
-    local width = 250
-    local height = 200
-    local x = 300
-    local y = 150
+    local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+    local width = 250 * scale
+    local height = 200 * scale
+    local x = (_G.gameConfig.windowWidth - width) / 2
+    local y = (_G.gameConfig.windowHeight - height) / 2
 
     -- Fond
     love.graphics.setColor(0, 0, 0, 0.85)
@@ -135,9 +149,9 @@ function Traider:drawShop()
     love.graphics.setColor(1, 1, 1)
     love.graphics.rectangle("line", x, y, width, height, 10, 10)
 
-    love.graphics.setNewFont(14)
-    local padding = 10
-    local lineHeight = 25
+    love.graphics.setNewFont(14 * scale)
+    local padding = 10 * scale
+    local lineHeight = 25 * scale
 
     love.graphics.print("SHOP DU MARCHAND", x + padding, y + padding)
 
@@ -155,22 +169,22 @@ function Traider:drawShop()
     if self.shopVideo then
         local videoWidth = self.shopVideo:getWidth()
         local videoHeight = self.shopVideo:getHeight()
-        local maxWidth = 260
+        local maxWidth = 260 * scale
         local maxHeight = height
         local scale = math.min(maxWidth / videoWidth, maxHeight / videoHeight, 1)
         local drawWidth = videoWidth * scale
         local drawHeight = videoHeight * scale
 
-        local videoX = x - drawWidth - 20
+        local videoX = x - drawWidth - 20 * scale
         local videoY = y
         if videoX < 10 then
-            videoX = x + width + 20
+            videoX = x + width + 20 * scale
         end
         if videoX + drawWidth > _G.gameConfig.windowWidth then
-            videoX = _G.gameConfig.windowWidth - drawWidth - 10
+            videoX = _G.gameConfig.windowWidth - drawWidth - 10 * scale
         end
         if videoY + drawHeight > _G.gameConfig.windowHeight then
-            videoY = _G.gameConfig.windowHeight - drawHeight - 10
+            videoY = _G.gameConfig.windowHeight - drawHeight - 10 * scale
         end
 
         if self.shopVideoCanvas then

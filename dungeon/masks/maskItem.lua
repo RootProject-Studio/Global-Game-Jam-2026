@@ -65,7 +65,7 @@ function MaskItem:draw(roomContext)
     
     -- Position absolue
     local x = roomX + self.relX * roomW
-    local y = roomY + self.relY * roomH + self.bobOffset
+    local y = roomY + self.relY * roomH + (self.bobOffset * scale)
     
     -- Dessiner le sprite avec rotation
     love.graphics.setColor(1, 1, 1)
@@ -107,7 +107,7 @@ function MaskItem:getAbsolutePos(roomContext)
     
     return {
         x = roomX + self.relX * roomW,
-        y = roomY + self.relY * roomH + self.bobOffset,
+        y = roomY + self.relY * roomH + (self.bobOffset * (roomContext.scale or 1)),
         r = self.size * (roomContext.scale or 1)
     }
 end

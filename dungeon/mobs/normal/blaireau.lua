@@ -26,8 +26,19 @@ function Blaireau:new(data)
 
     -- Taille visuelle du sprite (en pixels)
     m.visualSize = 240
+    m.baseVisualSize = m.visualSize
 
     return m
+end
+
+function Blaireau:applyScale(scale)
+    if not scale then return end
+    if Mob.applyScale then
+        Mob.applyScale(self, scale)
+    end
+    if self.baseVisualSize then
+        self.visualSize = self.baseVisualSize * scale
+    end
 end
 
 function Blaireau:update(dt, ctx)

@@ -65,7 +65,7 @@ function Scream:shoot(player, dirX, dirY, roomContext)
     local eyeY = player.y + dirY * eyeOffsetDistance
 
     -- Distance courte corps à corps, adaptée à la salle
-    local baseDistance = 50
+    local baseDistance = 110
     local scaleFactor = math.min(roomContext.roomWidth, roomContext.roomHeight) / 800
     local maxDistance = baseDistance * scaleFactor
 

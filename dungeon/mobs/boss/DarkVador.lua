@@ -6,7 +6,7 @@ function DarkVador:new(data)
     data.category = "boss"
     data.subtype = "darkvador"
     data.speed = 0
-    data.size = 40
+    data.size = 48
     data.maxHP = data.maxHP or 1200  -- PV max
 
     local m = Mob.new(self, data)

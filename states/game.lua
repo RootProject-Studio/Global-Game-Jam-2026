@@ -44,6 +44,8 @@ function GameState:enter()
     -- Système de niveaux (persistant)
     self.currentLevel = 1
     self.defeatedBosses = {}
+    self.levelUpMessage = nil
+    self.levelUpTimer = 0
     
     -- Valeurs de base (résolution 800x600)
     self.baseWidth = 800
@@ -112,6 +114,8 @@ function GameState:generateNewLevel()
     
     -- Nettoyer les projectiles
     self.player.projectiles = {}
+
+    self:updateRoomMusic()
 end
 
 function GameState:updateLayout()
@@ -140,10 +144,21 @@ function GameState:updateLayout()
     self.mapScale = self.baseMapScale * math.min(scale, 0.8) -- Limiter l'agrandissement de la carte
     self.mapOffsetX = 20 * scale  -- Marges réduites
     self.mapOffsetY = 20 * scale
+
+    if self.player and self.player.applyScale then
+        self.player:applyScale(scale)
+    end
 end
 
 function GameState:update(dt)
     if not self.currentRoom then return end
+
+    if self.levelUpTimer and self.levelUpTimer > 0 then
+        self.levelUpTimer = math.max(0, self.levelUpTimer - dt)
+        if self.levelUpTimer == 0 then
+            self.levelUpMessage = nil
+        end
+    end
 
     if self.player
         and self.player.maskManager
@@ -165,8 +180,9 @@ function GameState:update(dt)
     end
     
     -- Vérifier les transitions de salle via les portes
-    local doorWidth = 60 * _G.gameConfig.scaleX
-    local doorThreshold = 30 * _G.gameConfig.scaleX
+    local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+    local doorWidth = 60 * scale
+    local doorThreshold = 30 * scale
     local playerX = self.player.x
     local playerY = self.player.y
     
@@ -200,15 +216,17 @@ function GameState:update(dt)
         -- Vérifier collision avec la porte de niveau
         if self.currentRoom.levelDoorActive then
             local doorX = self.roomX + self.roomWidth / 2
-            local doorY = self.roomY + self.roomHeight - 40
-            local doorWidth = 80
-            local doorHeight = 40
+            local doorY = self.roomY + self.roomHeight - 40 * scale
+            local doorWidth = 80 * scale
+            local doorHeight = 40 * scale
             
             if playerX > doorX - doorWidth/2 and playerX < doorX + doorWidth/2 and
                playerY > doorY and playerY < doorY + doorHeight then
                 -- Passer au niveau suivant
                 self.currentLevel = self.currentLevel + 1
                 self:generateNewLevel()
+                self.levelUpMessage = "Niveau " .. tostring(self.currentLevel)
+                self.levelUpTimer = 2.5
                 return
             end
         end
@@ -370,6 +388,14 @@ function GameState:draw()
         self:drawMaskInventory()
     end
 
+    if self.levelUpMessage and (self.levelUpTimer or 0) > 0 then
+        local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+        local fontSize = math.max(16, 20 * scale)
+        love.graphics.setNewFont(fontSize)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf(self.levelUpMessage, 0, _G.gameConfig.windowHeight * 0.1, _G.gameConfig.windowWidth, "center")
+    end
+
 
 
     -- Instructions en bas
@@ -482,8 +508,9 @@ end
 
 
 function GameState:drawDoors()
-    local doorWidth = 60 * _G.gameConfig.scaleX
-    local doorHeight = 20 * _G.gameConfig.scaleY
+    local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
+    local doorWidth = 60 * scale
+    local doorHeight = 20 * scale
     local centerRoomX = self.roomX + self.roomWidth / 2
     local centerRoomY = self.roomY + self.roomHeight / 2
     
@@ -526,9 +553,9 @@ function GameState:drawDoors()
       -- Porte de niveau (après boss)
     if self.currentRoom.type == DungeonGenerator.ROOM_TYPES.BOSS and self.currentRoom.levelDoorActive then
         local doorX = self.roomX + self.roomWidth / 2
-        local doorY = self.roomY + self.roomHeight - 40
-        local doorWidth = 80
-        local doorHeight = 40
+        local doorY = self.roomY + self.roomHeight - 40 * scale
+        local doorWidth = 80 * scale
+        local doorHeight = 40 * scale
         
         -- Porte dorée qui pulse
         local pulse = 0.7 + 0.3 * math.sin(love.timer.getTime() * 3)
@@ -539,7 +566,7 @@ function GameState:drawDoors()
         
         -- Contour brillant
         love.graphics.setColor(1, 1, 0.5, pulse)
-        love.graphics.setLineWidth(4)
+        love.graphics.setLineWidth(4 * scale)
         love.graphics.rectangle("line", doorX - doorWidth/2, doorY, doorWidth, doorHeight, 5, 5)
         
     end
@@ -728,10 +755,13 @@ function GameState:updateMobs(dt)
     local roomY = self.roomY
     local roomW = self.roomWidth
     local roomH = self.roomHeight
-    local scale = _G.gameConfig.scaleX or 1
+    local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
 
     -- 1) Update each mob
     for _, mob in ipairs(self.currentRoom.mobs) do
+    if mob.applyScale then
+        mob:applyScale(scale)
+    end
     mob:update(dt, {
         roomX = roomX,
         roomY = roomY,
@@ -771,7 +801,7 @@ end
     for i, mob in ipairs(self.currentRoom.mobs) do
         local mx = roomX + mob.relX * roomW
         local my = roomY + mob.relY * roomH
-        local mr = (mob.size or 10) * scale
+        local mr = mob.size or 10
         abs[i] = {mob = mob, x = mx, y = my, r = mr, underground = (mob.state == "underground")}
     end
 
@@ -861,7 +891,7 @@ end
 function GameState:checkItemCollisions()
     if not self.player or not self.currentRoom.items or #self.currentRoom.items == 0 then return end
         
-    local scale = _G.gameConfig.scaleX or 1
+    local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
     local playerRadius = self.player.size or 8
     
     for _, item in ipairs(self.currentRoom.items) do
@@ -1033,7 +1063,8 @@ function GameState:drawMaskSlot(mask, x, y, w, h, selected)
 
     if info.imagePath then
         local img = love.graphics.newImage(info.imagePath)
-        local imgScale = math.min(w*0.6 / img:getWidth(), h*0.4 / img:getHeight())
+        local targetSize = 80 * scale
+        local imgScale = targetSize / math.max(img:getWidth(), img:getHeight())
         love.graphics.setColor(1,1,1)
         love.graphics.draw(
             img,
@@ -1061,7 +1092,8 @@ function GameState:drawMaskDetails(mask, x, y, w, h, scrollOffset)
     -- Image
     if info.imagePath then
         local img = love.graphics.newImage(info.imagePath)
-        local imgScale = math.min(w / 2 / img:getWidth(), (h/3) / img:getHeight())
+        local targetSize = 90 * scale
+        local imgScale = targetSize / math.max(img:getWidth(), img:getHeight())
         love.graphics.setColor(1,1,1)
         love.graphics.draw(
             img,
@@ -1146,7 +1178,8 @@ function GameState:drawMaskInventoryNormal()
         if info.imagePath then
             local img = love.graphics.newImage(info.imagePath)
             love.graphics.setColor(1,1,1)
-            local imgScale = 0.5*scale
+            local targetSize = 90 * scale
+            local imgScale = targetSize / math.max(img:getWidth(), img:getHeight())
             love.graphics.draw(img, pickX, pickY, 0, imgScale, imgScale, img:getWidth()/2, img:getHeight()/2)
         end
 

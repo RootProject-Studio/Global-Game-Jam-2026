@@ -12,7 +12,7 @@ function Hydra:new()
     obj.projectileCount = 3      -- Nombre de projectiles par tir
     obj.spreadAngle = math.pi / 6  -- 30° d'écart total (15° de chaque côté)
     obj.projectileSpeed = 500    -- Vitesse des projectiles
-    obj.projectileRange = 300    -- Portée maximale
+    obj.projectileRange = 520    -- Portée maximale
     obj.projectileSize = 8       -- Taille visuelle
     
     obj.shootCooldown = 1.0      -- Cooldown court

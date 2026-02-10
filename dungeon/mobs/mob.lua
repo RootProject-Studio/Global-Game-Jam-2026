@@ -13,6 +13,8 @@ function Mob:new(data)
 
     m.speed = data.speed or 40
     m.size  = data.size  or 15
+    m.baseSpeed = m.speed
+    m.baseSize = m.size
 
 
     -- PV
@@ -27,6 +29,16 @@ end
 
 function Mob:update(dt, ctx)
     -- redéfini dans les sous-types
+end
+
+function Mob:applyScale(scale)
+    if not scale then return end
+    if self.baseSize then
+        self.size = self.baseSize * scale
+    end
+    if self.baseSpeed then
+        self.speed = self.baseSpeed * scale
+    end
 end
 
 

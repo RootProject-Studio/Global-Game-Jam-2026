@@ -6,7 +6,7 @@ function Scarface:new(data)
     data.category = "boss"
     data.subtype  = "scarface"
     data.speed    = 0
-    data.size     = 38
+    data.size     = 46
     data.maxHP    = data.maxHP or 1200
 
     local m = Mob.new(self, data)

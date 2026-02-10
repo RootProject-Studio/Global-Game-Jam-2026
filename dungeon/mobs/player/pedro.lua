@@ -13,13 +13,19 @@ function Pedro:new()
     obj.width = 64    
     obj.height = 64   
     obj.size = 32
+    obj.baseWidth = obj.width
+    obj.baseHeight = obj.height
+    obj.baseSize = obj.size
 
     
     -- Propriétés de la hitbox elliptique
     obj.hitboxRadiusX = 50  -- Rayon horizontal (plus long gauche-droite)
     obj.hitboxRadiusY = 30  -- Rayon vertical (plus court haut-bas)
+    obj.baseHitboxRadiusX = obj.hitboxRadiusX
+    obj.baseHitboxRadiusY = obj.hitboxRadiusY
     
     obj.speed = 400
+    obj.baseSpeed = obj.speed
     obj.vx = 0
     obj.vy = 0
     obj.hp = 100
@@ -49,6 +55,16 @@ function Pedro:new()
     obj.isImmobile = false
     
     return obj
+end
+
+function Pedro:applyScale(scale)
+    if not scale then return end
+    self.width = self.baseWidth * scale
+    self.height = self.baseHeight * scale
+    self.size = self.baseSize * scale
+    self.hitboxRadiusX = self.baseHitboxRadiusX * scale
+    self.hitboxRadiusY = self.baseHitboxRadiusY * scale
+    self.speed = self.baseSpeed * scale
 end
 
 function Pedro:update(dt, roomContext)
@@ -164,6 +180,7 @@ function Pedro:addProjectile(projectile)
 end
 
 function Pedro:updateProjectiles(dt)
+    local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
     local i = 1
     while i <= #self.projectiles do
         local proj = self.projectiles[i]
@@ -304,7 +321,7 @@ function Pedro:updateProjectiles(dt)
             end
         elseif proj.isRay then
             if proj.player then
-                local eyeOffsetDistance = 20
+                local eyeOffsetDistance = 20 * scale
                 proj.x = proj.player.x + proj.dirX * eyeOffsetDistance
                 proj.y = proj.player.y + proj.dirY * eyeOffsetDistance
             end
@@ -337,13 +354,14 @@ function Pedro:updateProjectiles(dt)
 end
 
 function Pedro:checkProjectileCollisions(enemies)
+    local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
     -- Traitement spécial pour la saisie en phase seeking
     for projIdx = #self.projectiles, 1, -1 do
         local proj = self.projectiles[projIdx]
         
         if proj.isGrab and proj.state == "seeking" then
             local closestEnemy = nil
-            local closestDist = proj.grabRange
+            local closestDist = (proj.grabRange or 0) * scale
             
             for _, mob in ipairs(enemies) do
                 if mob and (not mob.isDead or not mob:isDead()) and mob.state ~= "underground" then
@@ -388,8 +406,9 @@ function Pedro:checkProjectileCollisions(enemies)
                     
                     -- ═══ SECTION 1 : DÉTECTION DE COLLISION ═══
                     if proj.isRay then
-                        local rayEndX = proj.x + proj.dirX * (proj.length or 400)
-                        local rayEndY = proj.y + proj.dirY * (proj.length or 400)
+                        local rayLength = (proj.length or 400) * scale
+                        local rayEndX = proj.x + proj.dirX * rayLength
+                        local rayEndY = proj.y + proj.dirY * rayLength
                         local dx = rayEndX - proj.x
                         local dy = rayEndY - proj.y
                         local rayLen = math.sqrt(dx*dx + dy*dy)
@@ -403,55 +422,61 @@ function Pedro:checkProjectileCollisions(enemies)
                             local distY = mobY - closestY
                             local dist = math.sqrt(distX*distX + distY*distY)
                             
-                            if dist < mob.size + (proj.width or 30) / 2 then
+                            local rayWidth = (proj.width or 30) * scale
+                            if dist < mob.size + rayWidth / 2 then
                                 collides = true
                             end
                         end
                         
                     elseif proj.isExplosion then
+                        local explosionRadius = (proj.radius or 0) * scale
                         local dx = proj.x - mobX
                         local dy = proj.y - mobY
                         local dist = math.sqrt(dx * dx + dy * dy)
                         
-                        if dist < proj.radius then
+                        if dist < explosionRadius then
                             collides = true
                         end
                         
                     elseif proj.isproj then
                         if proj.state == "impact" and not proj.hasHit then
+                            local impactRadius = (proj.radius or 0) * scale
                             local dx = proj.x - mobX
                             local dy = proj.y - mobY
                             local dist = math.sqrt(dx * dx + dy * dy)
                             
-                            if dist < proj.radius then
+                            if dist < impactRadius then
                                 collides = true
                             end
                         end
                         
                     elseif proj.isOrb then
+                        local orbRadius = (proj.radius or 0) * scale
                         local dx = proj.x - mobX
                         local dy = proj.y - mobY
                         local dist = math.sqrt(dx * dx + dy * dy)
                         
-                        if dist < proj.radius + mob.size then
+                        if dist < orbRadius + mob.size then
                             collides = true
                         end
                         
                     elseif proj.isShield then
+                        local shieldRadius = (proj.radius or 0) * scale
                         local dx = proj.x - mobX
                         local dy = proj.y - mobY
                         local dist = math.sqrt(dx * dx + dy * dy)
                         
-                        if dist < proj.radius then
+                        if dist < shieldRadius then
                             collides = true
                         end
                         
                     elseif proj.isAura then
+                        local auraRadius = (proj.radius or 0) * scale
                         local dx = proj.x - mobX
                         local dy = proj.y - mobY
                         local dist = math.sqrt(dx * dx + dy * dy)
                         
-                        if dist < proj.radius then
+                        if dist < auraRadius then
                             collides = true
                         end
                         
@@ -470,7 +495,7 @@ function Pedro:checkProjectileCollisions(enemies)
                         
                     else
                         -- Projectile normal
-                        local projRadius = proj.radius or 5
+                        local projRadius = (proj.radius or 5) * scale
                         local dx = proj.x - mobX
                         local dy = proj.y - mobY
                         local dist = math.sqrt(dx * dx + dy * dy)
@@ -538,7 +563,7 @@ function Pedro:checkProjectileCollisions(enemies)
                                 if dist > 0 then
                                     local nx = dx / dist
                                     local ny = dy / dist
-                                    local knockbackDistance = proj.knockbackForce or 300
+                                    local knockbackDistance = (proj.knockbackForce or 300) * scale
                                     local newMobX = mobX + nx * knockbackDistance
                                     local newMobY = mobY + ny * knockbackDistance
                                     
@@ -585,17 +610,20 @@ function Pedro:checkProjectileCollisions(enemies)
 end
 
 function Pedro:drawProjectiles()
+    local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
     for _, proj in ipairs(self.projectiles) do
         if proj.isRay then
             -- Rayon laser
             love.graphics.setColor(1, 0.3, 0.3, 0.8)
-            love.graphics.setLineWidth(proj.width or 30)
-            local endX = proj.x + proj.dirX * (proj.length or 400)
-            local endY = proj.y + proj.dirY * (proj.length or 400)
+            local rayWidth = (proj.width or 30) * scale
+            local rayLength = (proj.length or 400) * scale
+            love.graphics.setLineWidth(rayWidth)
+            local endX = proj.x + proj.dirX * rayLength
+            local endY = proj.y + proj.dirY * rayLength
             love.graphics.line(proj.x, proj.y, endX, endY)
             
             love.graphics.setColor(1, 1, 1, 0.6)
-            love.graphics.setLineWidth((proj.width or 30) * 0.5)
+            love.graphics.setLineWidth(rayWidth * 0.5)
             love.graphics.line(proj.x, proj.y, endX, endY)
         elseif proj.isHeal then
             -- Effet de soin visuel (croix verte + particules)
@@ -604,8 +632,8 @@ function Pedro:drawProjectiles()
             
             -- Croix médicale verte qui pulse
             love.graphics.setColor(0.2, 1, 0.2, alpha * 0.9)
-            love.graphics.setLineWidth(10)
-            local crossSize = 25 + phase * 15
+            love.graphics.setLineWidth(10 * scale)
+            local crossSize = (25 + phase * 15) * scale
             love.graphics.line(proj.x - crossSize, proj.y, proj.x + crossSize, proj.y)
             love.graphics.line(proj.x, proj.y - crossSize, proj.x, proj.y + crossSize)
             
@@ -613,27 +641,27 @@ function Pedro:drawProjectiles()
             love.graphics.setColor(0.5, 1, 0.5, alpha)
             for i = 1, 8 do
                 local angle = (i / 8) * math.pi * 2
-                local radius = 40 + phase * 30
-                local py = proj.y - phase * 40  -- Monte vers le haut
+                local radius = (40 + phase * 30) * scale
+                local py = proj.y - phase * 40 * scale  -- Monte vers le haut
                 local px = proj.x + math.cos(angle) * radius * (1 - phase)
-                love.graphics.circle("fill", px, py, 5 * (1 - phase))
+                love.graphics.circle("fill", px, py, 5 * (1 - phase) * scale)
             end
             
             -- Cercle de soin qui s'étend
             love.graphics.setColor(0.3, 1, 0.3, alpha * 0.4)
-            love.graphics.circle("fill", proj.x, proj.y, 50 * phase)    
+            love.graphics.circle("fill", proj.x, proj.y, 50 * phase * scale)    
         elseif proj.isExplosion then
             -- Explosion avec effet de glitch digital
             local phase = proj.phase
             
             -- Cercle extérieur qui s'étend
-            local expandRadius = proj.radius * (0.5 + phase * 0.8)
+            local expandRadius = (proj.radius * scale) * (0.5 + phase * 0.8)
             local alpha = 1 - phase
             
             -- Effet de glitch : plusieurs cercles décalés
             for offset = -3, 3, 3 do
                 love.graphics.setColor(0, 1, 0.5, alpha * 0.3)
-                love.graphics.circle("fill", proj.x + offset, proj.y, expandRadius)
+                love.graphics.circle("fill", proj.x + offset * scale, proj.y, expandRadius)
             end
             
             -- Cercle principal vert néon
@@ -646,7 +674,7 @@ function Pedro:drawProjectiles()
             
             -- Lignes de code qui s'échappent
             love.graphics.setColor(0, 1, 0.5, alpha)
-            love.graphics.setLineWidth(2)
+            love.graphics.setLineWidth(2 * scale)
             for i = 1, 8 do
                 local angle = (i / 8) * math.pi * 2 + phase * math.pi
                 local length = expandRadius * (0.8 + math.random() * 0.4)
@@ -659,7 +687,7 @@ function Pedro:drawProjectiles()
             
             -- Contour qui pulse
             love.graphics.setColor(0, 0.8, 0.3, alpha * 0.8)
-            love.graphics.setLineWidth(3)
+            love.graphics.setLineWidth(3 * scale)
             love.graphics.circle("line", proj.x, proj.y, expandRadius)
             
         elseif proj.isproj then
@@ -667,61 +695,62 @@ function Pedro:drawProjectiles()
                 -- Cercle de prévision (pulse)
                 local alpha = 0.3 + 0.4 * math.sin(love.timer.getTime() * 10)
                 love.graphics.setColor(1, 0.8, 0, alpha)
-                love.graphics.circle("fill", proj.x, proj.y, proj.radius)
+                love.graphics.circle("fill", proj.x, proj.y, proj.radius * scale)
                 
                 -- Contour rouge
                 love.graphics.setColor(1, 0, 0, 0.8)
-                love.graphics.setLineWidth(3)
-                love.graphics.circle("line", proj.x, proj.y, proj.radius)
+                love.graphics.setLineWidth(3 * scale)
+                love.graphics.circle("line", proj.x, proj.y, proj.radius * scale)
                 
                 -- Croix au centre
-                love.graphics.setLineWidth(2)
-                love.graphics.line(proj.x - 10, proj.y, proj.x + 10, proj.y)
-                love.graphics.line(proj.x, proj.y - 10, proj.x, proj.y + 10)
+                love.graphics.setLineWidth(2 * scale)
+                love.graphics.line(proj.x - 10 * scale, proj.y, proj.x + 10 * scale, proj.y)
+                love.graphics.line(proj.x, proj.y - 10 * scale, proj.x, proj.y + 10 * scale)
                 
             elseif proj.state == "impact" then
                 -- Flash d'impact
                 local flash = 1 - (proj.timer / 0.3)
                 love.graphics.setColor(1, 1, 0.8, flash)
-                love.graphics.circle("fill", proj.x, proj.y, proj.radius * (1 + flash * 0.5))
+                love.graphics.circle("fill", proj.x, proj.y, (proj.radius * scale) * (1 + flash * 0.5))
                 
                 -- Lance qui frappe
                 love.graphics.setColor(0.8, 0.8, 0.9, flash)
-                love.graphics.setLineWidth(8)
-                love.graphics.line(proj.x, proj.y - proj.radius * 1.5, proj.x, proj.y)
+                love.graphics.setLineWidth(8 * scale)
+                love.graphics.line(proj.x, proj.y - (proj.radius * scale) * 1.5, proj.x, proj.y)
             end
             
         elseif proj.isOrb then
             -- Orbes avec effet de lueur
             love.graphics.setColor(0.8, 0.6, 0.2, 0.3)
-            love.graphics.circle("fill", proj.x, proj.y, proj.radius * 1.5)
+            love.graphics.circle("fill", proj.x, proj.y, (proj.radius * scale) * 1.5)
             
             love.graphics.setColor(0.9, 0.7, 0.3, 0.9)
-            love.graphics.circle("fill", proj.x, proj.y, proj.radius)
+            love.graphics.circle("fill", proj.x, proj.y, proj.radius * scale)
             
             love.graphics.setColor(1, 0.9, 0.6, 1)
-            love.graphics.circle("fill", proj.x, proj.y, proj.radius * 0.5)
+            love.graphics.circle("fill", proj.x, proj.y, (proj.radius * scale) * 0.5)
             
         elseif proj.isShield then
             -- Dessiner le bouclier avec effet de rotation et pulsation
             local time = love.timer.getTime()
             local pulse = 0.8 + 0.2 * math.sin(time * 5)
+            local shieldRadius = (proj.radius or 0) * scale
             
             -- Cercle externe (aura dorée)
             love.graphics.setColor(1, 0.9, 0.3, 0.2 * pulse)
-            love.graphics.circle("fill", proj.x, proj.y, proj.radius * 1.2)
+            love.graphics.circle("fill", proj.x, proj.y, shieldRadius * 1.2)
             
             -- Bouclier principal
             love.graphics.setColor(0.9, 0.9, 1, 0.4 * pulse)
-            love.graphics.circle("fill", proj.x, proj.y, proj.radius)
+            love.graphics.circle("fill", proj.x, proj.y, shieldRadius)
             
             -- Dessiner 4 croix rotatives pour l'effet templier
             love.graphics.setColor(1, 0.95, 0.5, 0.8)
-            love.graphics.setLineWidth(4)
+            love.graphics.setLineWidth(4 * scale)
             
             for i = 0, 3 do
                 local angle = time * 2 + (i * math.pi / 2)
-                local length = proj.radius * 0.8
+                local length = shieldRadius * 0.8
                 
                 -- Bras de la croix
                 local x1 = proj.x + math.cos(angle) * length * 0.3
@@ -734,45 +763,46 @@ function Pedro:drawProjectiles()
             
             -- Contour du bouclier
             love.graphics.setColor(1, 1, 0.7, 0.6)
-            love.graphics.setLineWidth(3)
-            love.graphics.circle("line", proj.x, proj.y, proj.radius)
+            love.graphics.setLineWidth(3 * scale)
+            love.graphics.circle("line", proj.x, proj.y, shieldRadius)
             
         elseif proj.isAura then
             -- Dessiner l'aura de poison avec effet pulsant
             local pulse = 0.7 + 0.3 * math.sin(love.timer.getTime() * 3)
+            local auraRadius = (proj.radius or 0) * scale
             
             -- Cercle externe (nuage de poison)
             love.graphics.setColor(0.2, 0.6, 0.2, 0.15 * pulse)
-            love.graphics.circle("fill", proj.x, proj.y, proj.radius * 1.2)
+            love.graphics.circle("fill", proj.x, proj.y, auraRadius * 1.2)
             
             -- Cercle principal
             love.graphics.setColor(0.3, 0.7, 0.3, 0.25 * pulse)
-            love.graphics.circle("fill", proj.x, proj.y, proj.radius)
+            love.graphics.circle("fill", proj.x, proj.y, auraRadius)
             
             -- Cercle interne (plus intense)
             love.graphics.setColor(0.4, 0.8, 0.3, 0.35 * pulse)
-            love.graphics.circle("fill", proj.x, proj.y, proj.radius * 0.7)
+            love.graphics.circle("fill", proj.x, proj.y, auraRadius * 0.7)
             
             -- Contour de l'aura (pour visualiser le rayon)
             love.graphics.setColor(0.5, 0.9, 0.4, 0.4)
-            love.graphics.setLineWidth(2)
-            love.graphics.circle("line", proj.x, proj.y, proj.radius)
+            love.graphics.setLineWidth(2 * scale)
+            love.graphics.circle("line", proj.x, proj.y, auraRadius)
             
         elseif proj.isGrab then
             if proj.state == "seeking" then
                 local pulse = 0.7 + 0.3 * math.sin(love.timer.getTime() * 10)
                 love.graphics.setColor(1, 0.8, 0.2, 0.4 * pulse)
-                love.graphics.circle("fill", proj.player.x, proj.player.y, proj.grabRange)
+                love.graphics.circle("fill", proj.player.x, proj.player.y, (proj.grabRange or 0) * scale)
                 
                 love.graphics.setColor(1, 0.6, 0, 0.8)
-                love.graphics.setLineWidth(3)
-                love.graphics.circle("line", proj.player.x, proj.player.y, proj.grabRange * pulse)
+                love.graphics.setLineWidth(3 * scale)
+                love.graphics.circle("line", proj.player.x, proj.player.y, (proj.grabRange or 0) * scale * pulse)
                 
             elseif proj.state == "throwing" and proj.grabbedEnemy then
                 love.graphics.setColor(1, 0.8, 0.2, 0.6)
-                love.graphics.setLineWidth(8)
+                love.graphics.setLineWidth(8 * scale)
                 
-                local trailLength = 50
+                local trailLength = 50 * scale
                 local trailX = proj.x - proj.dirX * trailLength
                 local trailY = proj.y - proj.dirY * trailLength
                 love.graphics.line(trailX, trailY, proj.x, proj.y)
@@ -780,10 +810,10 @@ function Pedro:drawProjectiles()
                 -- Étoiles autour de l'ennemi
                 for i = 1, 4 do
                     local angle = love.timer.getTime() * 5 + (i * math.pi / 2)
-                    local radius = 30
+                    local radius = 30 * scale
                     local sx = proj.x + math.cos(angle) * radius
                     local sy = proj.y + math.sin(angle) * radius
-                    love.graphics.circle("fill", sx, sy, 3)
+                    love.graphics.circle("fill", sx, sy, 3 * scale)
                 end
             end
             
@@ -798,8 +828,8 @@ function Pedro:drawProjectiles()
                 love.graphics.setColor(1, 0, 0)
             end
             local projWidth = proj.width or 5
-            love.graphics.setLineWidth(projWidth)
-            love.graphics.line(proj.x, proj.y, proj.x + proj.dirX * 20, proj.y + proj.dirY * 20)
+            love.graphics.setLineWidth(projWidth * scale)
+            love.graphics.line(proj.x, proj.y, proj.x + proj.dirX * 20 * scale, proj.y + proj.dirY * 20 * scale)
         end
     end
 end

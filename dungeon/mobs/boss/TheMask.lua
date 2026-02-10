@@ -7,7 +7,7 @@ function TheMask:new(data)
     data.category = "boss"
     data.subtype = "theMask"
     data.speed = 300
-    data.size = 40
+    data.size = 48
 
     local m = Mob.new(self, data)
     m.angle = 0
@@ -21,6 +21,11 @@ function TheMask:new(data)
     m.projectileInterval = 0.25-- tirer toutes les 0.25s pendant la charge
     m.maxHP = data.maxHP or 1200
     m.hp = m.maxHP
+    m.image = nil
+    m.imagePath = "dungeon/mobs/boss/assets/kangourou.png"
+    if love.filesystem.getInfo(m.imagePath) then
+        m.image = love.graphics.newImage(m.imagePath)
+    end
     -- Damage settings
     m.dashDamage = data.dashDamage or 20
     m.explosionDamage = data.explosionDamage or 20
@@ -341,15 +346,25 @@ function TheMask:draw(ctx)
     local y = ctx.roomY + self.relY * ctx.roomHeight
 
     -- Couleur change selon l'état
+    local drawColor = {1, 0, 0}
     if self.state == "charging" then
-        love.graphics.setColor(1, 0.5, 0)  -- Orange pendant la charge
+        drawColor = {1, 0.5, 0}
     elseif self.state == "stunned" then
-        love.graphics.setColor(0.5, 0.5, 0.5)  -- Gris pendant l'étourdissement
-    else
-        love.graphics.setColor(1, 0, 0)  -- Rouge normal
+        drawColor = {0.5, 0.5, 0.5}
     end
 
-    love.graphics.circle("fill", x, y, self.size)
+    if self.image then
+        love.graphics.setColor(drawColor[1], drawColor[2], drawColor[3])
+        local imgWidth = self.image:getWidth()
+        local imgHeight = self.image:getHeight()
+        local targetSize = self.size * 2
+        local scaleX = targetSize / imgWidth
+        local scaleY = targetSize / imgHeight
+        love.graphics.draw(self.image, x, y, 0, scaleX, scaleY, imgWidth / 2, imgHeight / 2)
+    else
+        love.graphics.setColor(drawColor[1], drawColor[2], drawColor[3])
+        love.graphics.circle("fill", x, y, self.size)
+    end
     -- Barre de vie (même style que DarkVador)
     if self.maxHP and self.hp then
         local scale = _G.gameConfig.scale or math.min(_G.gameConfig.scaleX, _G.gameConfig.scaleY)
