@@ -31,6 +31,25 @@ function Traider:new(data)
     m.ignoreCollision = true
     m.shopOpen = false
     m.deltaShopClose = 0
+    m.shopVideoPath = "videos/shop.ogv"
+    m.shopVideo = nil
+    m.shopVideoLoaded = false
+    m.shopVideoStarted = false
+    m.shopVideoCanvas = nil
+    m.shopVideoShader = love.graphics.newShader([[
+        extern vec3 keyColor;
+        extern number threshold;
+        extern number smoothing;
+
+        vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc)
+        {
+            vec4 pixel = Texel(tex, tc) * color;
+            number dist = distance(pixel.rgb, keyColor);
+            number alpha = smoothstep(threshold, threshold + smoothing, dist);
+            pixel.a = pixel.a * alpha;
+            return pixel;
+        }
+    ]])
     m.shopItems = {
         Paladin,
         Anonymous,
@@ -65,12 +84,21 @@ function Traider:update(dt, ctx)
     end
 
     if love.keyboard.isDown(_G.gameConfig.keys.escape) then
-        self.shopOpen = false
-        player.isImmobile = false
-        self.deltaShopClose = 20
+        self:closeShop(player)
     end
     if self.deltaShopClose > 0 then
         self.deltaShopClose = self.deltaShopClose - 1
+    end
+
+    if self.shopOpen then
+        self:ensureShopVideo()
+        if self.shopVideo and not self.shopVideoStarted then
+            self.shopVideo:play()
+            self.shopVideoStarted = true
+        end
+    elseif self.shopVideo and self.shopVideo:isPlaying() then
+        self.shopVideo:pause()
+        self.shopVideo:rewind()
     end
 end
 
@@ -124,6 +152,74 @@ function Traider:drawShop()
         love.graphics.print(itemName, x + padding, y + padding + i * lineHeight)
     end
 
+    if self.shopVideo then
+        local videoWidth = self.shopVideo:getWidth()
+        local videoHeight = self.shopVideo:getHeight()
+        local maxWidth = 260
+        local maxHeight = height
+        local scale = math.min(maxWidth / videoWidth, maxHeight / videoHeight, 1)
+        local drawWidth = videoWidth * scale
+        local drawHeight = videoHeight * scale
+
+        local videoX = x - drawWidth - 20
+        local videoY = y
+        if videoX < 10 then
+            videoX = x + width + 20
+        end
+        if videoX + drawWidth > _G.gameConfig.windowWidth then
+            videoX = _G.gameConfig.windowWidth - drawWidth - 10
+        end
+        if videoY + drawHeight > _G.gameConfig.windowHeight then
+            videoY = _G.gameConfig.windowHeight - drawHeight - 10
+        end
+
+        if self.shopVideoCanvas then
+            local previousCanvas = love.graphics.getCanvas()
+            love.graphics.setCanvas(self.shopVideoCanvas)
+            love.graphics.clear(0, 0, 0, 0)
+            love.graphics.setShader()
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.draw(self.shopVideo, 0, 0)
+            love.graphics.setCanvas(previousCanvas)
+
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.setShader(self.shopVideoShader)
+            self.shopVideoShader:send("keyColor", {0.0, 1.0, 0.0})
+            self.shopVideoShader:send("threshold", 0.35)
+            self.shopVideoShader:send("smoothing", 0.1)
+            love.graphics.draw(self.shopVideoCanvas, videoX, videoY, 0, scale, scale)
+            love.graphics.setShader()
+        end
+    end
+
+end
+
+function Traider:ensureShopVideo()
+    if self.shopVideoLoaded then return end
+    self.shopVideoLoaded = true
+
+    if love.filesystem.getInfo(self.shopVideoPath) then
+        local ok, videoOrErr = pcall(love.graphics.newVideo, self.shopVideoPath)
+        if ok then
+            self.shopVideo = videoOrErr
+            self.shopVideoCanvas = love.graphics.newCanvas(self.shopVideo:getWidth(), self.shopVideo:getHeight())
+            self.shopVideoStarted = false
+        else
+            io.stderr:write("Shop video invalid or unsupported: " .. tostring(videoOrErr) .. "\n")
+        end
+    end
+end
+
+function Traider:closeShop(player)
+    self.shopOpen = false
+    player.isImmobile = false
+    self.deltaShopClose = 20
+
+    if self.shopVideo and self.shopVideo:isPlaying() then
+        self.shopVideo:pause()
+        self.shopVideo:rewind()
+    end
+    self.shopVideoStarted = false
 end
 
 -- Sélectionner item avec les touches
@@ -149,12 +245,10 @@ function Traider:shopKeypressed(key, player)
         player.maskManager:startPickup(newMask)
 
         -- Fermer le shop et débloquer le joueur
-        self.shopOpen = false
-        player.isImmobile = false
+        self:closeShop(player)
     elseif key == "escape" then
         -- Fermer le shop sans acheter
-        self.shopOpen = false
-        player.isImmobile = false
+        self:closeShop(player)
     end
 end
 

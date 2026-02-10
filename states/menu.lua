@@ -26,12 +26,17 @@ function MenuState:enter()
             Transitions:start("slideLeft", 0.3)
             GameStateManager:setState("credits")
         end},
+        {x = 0, y = 0, width = 200, height = 50, label = "Bonus", action = function() 
+            Transitions:start("slideLeft", 0.3)
+            GameStateManager:setState("bonus")
+        end},
         {x = 0, y = 0, width = 200, height = 50, label = "Quitter", action = function() 
             Transitions:start("fade", 0.5)
             love.event.quit()
         end}
     }
     self:updateButtonPositions()
+    -- self:ensureMenuVideo() -- Commented out to remove video loading
 end
 
 function MenuState:updateButtonPositions()
@@ -55,6 +60,7 @@ function MenuState:updateButtonPositions()
 end
 
 function MenuState:update(dt)
+    -- Removed video playback logic
 end
 
 function MenuState:draw()
@@ -83,6 +89,8 @@ function MenuState:draw()
         love.graphics.printf(button.label, button.x, button.y + button.height / 4, button.width, "center")
     end
 end
+
+-- Removed ensureMenuVideo function as it is no longer needed
 
 function MenuState:keypressed(key)
     if key == "up" or key == "z" then

@@ -1,0 +1,108 @@
+local Transitions = require("transitions")
+local GameStateManager = require("gamestate")
+local AudioManager = require("audio_manager")
+
+local BonusState = {
+    buttons = {},
+    selectedButton = 1
+}
+
+function BonusState:enter()
+    if not AudioManager:isMusicPlaying() then
+        AudioManager:fadeInMusic("music/menu.ogg", 1.0, 0.5)
+    end
+
+    self.buttons = {
+        {x = 0, y = 0, width = 200, height = 50, label = "Voir intro", action = function()
+            Transitions:start("fade", 0.3)
+            GameStateManager:setState("intro")
+        end},
+        {x = 0, y = 0, width = 200, height = 50, label = "Retour", action = function()
+            Transitions:start("slideRight", 0.3)
+            GameStateManager:setState("menu")
+        end}
+    }
+    self:updateButtonPositions()
+end
+
+function BonusState:updateButtonPositions()
+    local scale = _G.gameConfig.scale
+    local windowWidth = _G.gameConfig.windowWidth
+    local windowHeight = _G.gameConfig.windowHeight
+
+    local buttonWidth = 200 * scale
+    local buttonHeight = 50 * scale
+    local spacing = 20 * scale
+
+    local totalHeight = #self.buttons * buttonHeight + (#self.buttons - 1) * spacing
+    local startY = (windowHeight - totalHeight) / 2
+
+    for i, button in ipairs(self.buttons) do
+        button.width = buttonWidth
+        button.height = buttonHeight
+        button.x = (windowWidth - buttonWidth) / 2
+        button.y = startY + (i - 1) * (buttonHeight + spacing)
+    end
+end
+
+function BonusState:update(dt)
+end
+
+function BonusState:draw()
+    love.graphics.clear(0.1, 0.1, 0.1)
+
+    local scale = _G.gameConfig.scale
+    local windowWidth = _G.gameConfig.windowWidth
+
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.setFont(love.graphics.newFont(48 * scale))
+    love.graphics.printf("Bonus", 0, 50 * scale, windowWidth, "center")
+
+    for i, button in ipairs(self.buttons) do
+        if i == self.selectedButton then
+            love.graphics.setColor(0.3, 0.5, 0.8)
+        else
+            love.graphics.setColor(0.2, 0.2, 0.2)
+        end
+
+        love.graphics.rectangle("fill", button.x, button.y, button.width, button.height)
+
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.setFont(love.graphics.newFont(24 * scale))
+        love.graphics.printf(button.label, button.x, button.y + button.height / 4, button.width, "center")
+    end
+end
+
+function BonusState:keypressed(key)
+    if key == "up" or key == "z" then
+        self.selectedButton = self.selectedButton - 1
+        if self.selectedButton < 1 then
+            self.selectedButton = #self.buttons
+        end
+    elseif key == "down" or key == "s" then
+        self.selectedButton = self.selectedButton + 1
+        if self.selectedButton > #self.buttons then
+            self.selectedButton = 1
+        end
+    elseif key == "return" or key == "space" then
+        self.buttons[self.selectedButton].action()
+    elseif key == "escape" then
+        GameStateManager:setState("menu")
+    end
+end
+
+function BonusState:mousepressed(x, y, button)
+    for i, btn in ipairs(self.buttons) do
+        if x >= btn.x and x <= btn.x + btn.width and
+           y >= btn.y and y <= btn.y + btn.height then
+            btn.action()
+            break
+        end
+    end
+end
+
+function BonusState:onResize()
+    self:updateButtonPositions()
+end
+
+return BonusState

@@ -23,6 +23,7 @@ function Transitions:update(dt)
         if self.progress >= 1 then
             self.progress = 1
             self.active = false
+            self.progress = 0
             return true -- Transition terminée
         end
     end

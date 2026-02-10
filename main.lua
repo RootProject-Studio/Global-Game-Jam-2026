@@ -2,6 +2,8 @@ local GameStateManager = require("gamestate")
 local Transitions = require("transitions")
 local AudioManager = require("audio_manager")
 local MenuState = require("states.menu")
+local IntroState = require("states.intro")
+local BonusState = require("states.bonus")
 local GameState = require("states.game")
 local CreditsState = require("states.credits")
 local OptionsState = require("states.options")
@@ -44,13 +46,15 @@ function love.load()
     GameStateManager:init()
 
     -- Enregistrement des états
+    GameStateManager:registerState("intro", IntroState)
     GameStateManager:registerState("menu", MenuState)
+    GameStateManager:registerState("bonus", BonusState)
     GameStateManager:registerState("game", GameState)
     GameStateManager:registerState("options", OptionsState)
     GameStateManager:registerState("credits", CreditsState)
 
-    -- Démarrage avec le menu
-    GameStateManager:setState("menu")
+    -- Démarrage avec l'intro
+    GameStateManager:setState("intro")
 end
 
 function love.update(dt)
