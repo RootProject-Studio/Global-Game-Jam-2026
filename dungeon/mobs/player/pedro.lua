@@ -35,7 +35,7 @@ function Pedro:new()
     -- Propriétés spécifiques à Pedro
     obj.currentFrame = 1
     obj.frameTime = 0
-    obj.frameDelay = 0.1
+    obj.frameDelay = 0.2
     obj.facing = "right"  -- par défaut à droite
 
     
