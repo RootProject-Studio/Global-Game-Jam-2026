@@ -38,7 +38,7 @@ function Scarface:new(data)
     -- Dégâts
     m.trailDamage   = 10          -- dégâts par contact traînée
     m.emergeDamage  = 20          -- dégâts de remontée
-    m.trailHitRadius = 0.1      -- rayon de collision d'un point de traînée (relatif)
+    m.trailHitRadius = 0.04      -- rayon de collision d'un point de traînée (relatif)
 
     m.currentFrame = 1
     m.frameTime = 0
