@@ -9,7 +9,7 @@ function CreditsState:enter()
     end
     
     self.scrollY = 600
-    self.scrollSpeed = 30
+    self.scrollSpeed = 60
     self.scrollSpeedBase = self.scrollSpeed
 
     self.credits = {
@@ -29,6 +29,10 @@ function CreditsState:enter()
         "",
         "Graphisme",
         "Milo GAUTHIER",
+        "",
+        "",
+        "Musique",
+        "Julien GAUTHIER",
         "",
         "",
         "Moteur de jeu",
