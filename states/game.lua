@@ -177,6 +177,10 @@ function GameState:update(dt)
             roomHeight = self.roomHeight
         }
         self.player:update(dt, roomContext)
+        if self.player.hp <=0 then 
+            GameStateManager:setState("menu")
+            return
+        end
     end
     
     -- Vérifier les transitions de salle via les portes
